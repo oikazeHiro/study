@@ -1,0 +1,101 @@
+// 定义项目中使用的插件
+plugins {
+    // 定义项目为Java项目
+    id 'java'
+    // 使用Spring Boot插件
+    id 'org.springframework.boot' version '3.3.3'
+    // 使用Spring依赖管理插件
+    id 'io.spring.dependency-management' version '1.1.6'
+}
+
+// 设置项目组
+group = 'com.oik'
+// 设置项目版本
+version = '0.0.1-SNAPSHOT'
+// 配置IDEA支持并下载JavaDoc和源代码
+apply plugin: 'idea'
+idea {
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
+}
+// 配置Java语言版本为21
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+// 配置编译依赖时包含注解处理器
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+// 定义项目仓库
+repositories {
+    mavenCentral()
+}
+
+// 扩展项目对象，设置Spring Boot版本
+ext {
+    set('springBootVersion', "3.3.3")
+    springBootVersion = "3.3.3"
+}
+
+// 应用到所有子项目
+allprojects {
+    apply plugin: 'java'
+    group = 'com.oik'
+    version = '0.0.1-SNAPSHOT'
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+    }
+    repositories {
+        // 阿里云镜像仓库
+        maven { url 'https://maven.aliyun.com/nexus/content/groups/public/' }
+        // 腾讯云镜像仓库（注释掉）
+        //maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+        // 华为镜像仓库（注释掉）
+        //maven { url 'https://developer.huawei.com/repo/' }
+        mavenCentral()
+        gradlePluginPortal()
+        mavenLocal()
+    }
+}
+
+// 应用到所有子项目
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    ext {
+        set('springBootVersion', "3.3.3")
+        springBootVersion = "3.3.3"
+    }
+    dependencies {
+        // 添加Web启动依赖
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        // 添加测试启动依赖
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        // 添加JUnit平台启动器
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    }
+    dependencyManagement {
+        // 导入Spring Boot依赖管理
+        imports {
+            mavenBom "org.springframework.boot:spring-boot-dependencies:${springBootVersion}"
+        }
+    }
+    tasks.bootJar {
+        // 启用BootJar任务
+        enabled = true
+    }
+}
+
+// 配置测试任务使用JUnit平台
+tasks.named('test') {
+    useJUnitPlatform()
+}
