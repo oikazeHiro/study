@@ -1,2 +1,2 @@
 rootProject.name = 'Server-side'
-include 'common','app','server'
+include 'common','app','server','mapper'

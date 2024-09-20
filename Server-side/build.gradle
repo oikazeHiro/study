@@ -3,7 +3,7 @@ plugins {
     // 定义项目为Java项目
     id 'java'
     // 使用Spring Boot插件
-    id 'org.springframework.boot' version '3.3.3'
+    id 'org.springframework.boot' version '3.3.4'
     // 使用Spring依赖管理插件
     id 'io.spring.dependency-management' version '1.1.6'
 }
@@ -39,8 +39,8 @@ repositories {
 
 // 扩展项目对象，设置Spring Boot版本
 ext {
-    set('springBootVersion', "3.3.3")
-    springBootVersion = "3.3.3"
+    set('springBootVersion', "3.3.4")
+    springBootVersion = "3.3.4"
 }
 
 // 应用到所有子项目
@@ -72,8 +72,8 @@ subprojects {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     ext {
-        set('springBootVersion', "3.3.3")
-        springBootVersion = "3.3.3"
+        set('springBootVersion', "3.3.4")
+        springBootVersion = "3.3.4"
     }
     dependencies {
         // 添加Web启动依赖
@@ -82,6 +82,19 @@ subprojects {
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         // 添加JUnit平台启动器
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        // 使用Spring Boot的配置处理器插件，以支持@ConditionalOnProperty等注解的处理
+        annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+        // 在编译阶段添加 Lombok 依赖，以便在编译时能够使用 Lombok 提供的注解增强功能
+        compileOnly 'org.projectlombok:lombok'
+        // 指定 Lombok 为注解处理器，用于处理 Lombok 注解，自动生成代码，如getter、setter等方法
+        annotationProcessor 'org.projectlombok:lombok'
+        // 引入 MyBatis-Plus 的 Spring Boot Starter 包，用于简化 MyBatis 的配置和使用
+        implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.7'
+        // 引入 MyBatis-Plus 的 Spring Boot Starter 包，用于简化 MyBatis 的配置和使用
+        implementation 'com.github.yulichang:mybatis-plus-join-boot-starter:1.5.0'
+        // mysql-connector-j
+        implementation 'com.mysql:mysql-connector-j:9.0.0'
+
     }
     dependencyManagement {
         // 导入Spring Boot依赖管理
