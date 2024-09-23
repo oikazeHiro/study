@@ -4,4 +4,6 @@ dependencies {
     implementation project(":server")
 }
 
-
+tasks.named('test') {
+    useJUnitPlatform()
+}

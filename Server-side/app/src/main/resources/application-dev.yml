@@ -1,2 +1,25 @@
 server:
   port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: npw:6DwlEk2p3zlX1dwISKwaZ+XSaeMo4aCpIY7tXbWfF9/JgtOvhzcP0Cg3Ml11yPW7wmrv5aK+7fqVZStS4QRQlkajkvR+XetdoW6h9IfLQKq/WFQuRcNaI5D7T8tkmW3f+u7Mma5/VysEkjM3zV3BQBk38WJ9SGAX4QvjnpfF1Yxncd32CAwutsYLVUSSqcmQ
+    username: npw:4ZWHg8+KDo7xKs+f6Pbhcw==
+    password: npw:kLtkcQASc4BY0PnWAyX19Q==
+
+study:
+  db-type: mysql
+
+# 配置 Mybatis-Plus 的全局配置
+mybatis-plus:
+  global-config:
+    # 数据库配置
+    db-config:
+      # 逻辑删除字段名
+      logic-delete-field: deleted
+      # 逻辑删除值
+      logic-delete-value: 1
+      # 非逻辑删除值
+      logic-not-delete-value: 0
+

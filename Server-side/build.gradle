@@ -106,6 +106,7 @@ subprojects {
         // 启用BootJar任务
         enabled = true
     }
+
 }
 
 // 配置测试任务使用JUnit平台
