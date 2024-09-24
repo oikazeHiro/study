@@ -4,15 +4,17 @@ server:
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: npw:6DwlEk2p3zlX1dwISKwaZ+XSaeMo4aCpIY7tXbWfF9/JgtOvhzcP0Cg3Ml11yPW7wmrv5aK+7fqVZStS4QRQlkajkvR+XetdoW6h9IfLQKq/WFQuRcNaI5D7T8tkmW3f+u7Mma5/VysEkjM3zV3BQBk38WJ9SGAX4QvjnpfF1Yxncd32CAwutsYLVUSSqcmQ
-    username: npw:4ZWHg8+KDo7xKs+f6Pbhcw==
-    password: npw:kLtkcQASc4BY0PnWAyX19Q==
+    url: mpw:LUotCMqUiRP4OWYvRhyPJ93Ae53hy174FDLU3di7/PEGwsx9D/L+1TImeTNoEigFYfjHxcxO6CUpRnlq6I9Dl4RzNtR5TJ0qESqezO3jdRwAcdBDQIAE3MSX7mf1LJemYPkLbuRMdlmvi9ksDNjCNiWYFrkjUQBJA59yQ4zHNVzGhHPvCpgwhMvR8Bfs0tjy
+    username: mpw:tuI9qo5UWVRSmcNfb7N5xg==
+    password: mpw:0jfWe1ZtwCNcOmD4pj94Kg==
 
 study:
   db-type: mysql
 
 # 配置 Mybatis-Plus 的全局配置
 mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     # 数据库配置
     db-config:

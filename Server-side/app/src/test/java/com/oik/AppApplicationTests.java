@@ -5,10 +5,13 @@ import com.oik.service.SysUserService;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import java.io.File;
+
 @SpringBootTest()
-@TestPropertySource(locations = "classpath:application-dev.yml")
+@ActiveProfiles("test")
 class AppApplicationTests {
 
     @Resource
@@ -16,12 +19,14 @@ class AppApplicationTests {
 
     @Test
     void contextLoads() {
-        System.out.println(Encrypt.encrypt("icui4cu", "Zs81y4PpLSSxcLwO"));
+        String url ="jdbc:mysql://118.25.183.36:3306/study?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true";
+        System.out.println(Encrypt.encrypt("icui4cu", "wdzOW5StfLCDwwyW"));
     }
 
     @Test
     void randomKey(){
         System.out.println(Encrypt.randomKey());
+        System.out.println(new File(System.getProperty("user.dir")).getParent());
     }
 
     @Test
