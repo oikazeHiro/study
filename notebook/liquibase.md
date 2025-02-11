@@ -8,8 +8,6 @@ gradle
 implementation 'org.liquibase:liquibase-core:4.30.0'
 ```
 
-
-
 maven
 
 ```xml
@@ -57,25 +55,15 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                   nullable: false
-
-
 ```
-
-
 
 启动项目
 
-![截图1](.\assets\屏幕截图%202025-01-15%20153521.png)
+![截图1](./assets/153521.png)
 
-
-
-![截图2](.\assets\屏幕截图%202025-01-15%20153607.png)
+![截图2](./assets/153607.png)
 
 生成数据库
-
-
-
-
 
 #### Liquibase databaseChangeLog 所有属性解析
 
@@ -83,6 +71,7 @@ Liquibase 的 databaseChangeLog 是一个 YAML 或 XML 文件，用于定义数�
 
 - databaseChangeLog
   这是根元素，包含所有的变更集（changeSet）。
+
 - changeSet
   每个 changeSet 定义了一组要应用到数据库的更改。它有以下属性：
   id (必填)：唯一标识符，确保每个变更集在整个项目中是唯一的。
@@ -95,6 +84,7 @@ Liquibase 的 databaseChangeLog 是一个 YAML 或 XML 文件，用于定义数�
   failOnError (可选)：如果设置为 false，即使发生错误也不会中断整个变更日志的执行，默认为 true。
   validCheckSum (可选)：指定校验和，用于验证变更集是否已正确应用。
   rollback (可选)：定义回滚操作，以便在需要时撤销变更集。
+
 - changes
   每个 changeSet 包含一个或多个 changes，每个 change 定义具体的数据库操作。常见的 change 类型包括：
   addColumn：向表中添加新列。
@@ -114,6 +104,7 @@ Liquibase 的 databaseChangeLog 是一个 YAML 或 XML 文件，用于定义数�
   
   createIndex 添加索引
   sql：执行自定义 SQL 语句。
+
 - columns
   对于某些 change 类型（如 addColumn），可以定义 columns 来描述列的详细信息：
   name (必填)：列名。
@@ -121,19 +112,15 @@ Liquibase 的 databaseChangeLog 是一个 YAML 或 XML 文件，用于定义数�
   value (可选)：默认值。
   constraints (可选)：定义列的约束条件，如 primaryKey、nullable 等。
 
-
-
-
-
 #### 测试
 
 配置添加字段：
 
-![jt3](./assets/屏幕截图%202025-01-15%20154502.png)
+![jt3](./assets/154502.png)
 
 测试结果：
 
-![jt4](./assets/屏幕截图%202025-01-15%20154544.png)
+![jt4](./assets/154544.png)
 
 测试添加索引：
 
@@ -152,9 +139,7 @@ databaseChangeLog:
 
 结果：
 
-![jt5](./assets/屏幕截图%202025-01-15%20155954.png)
-
-
+![jt5](./assets/155954.png)
 
 ### 补充和示例
 
@@ -201,7 +186,6 @@ databaseChangeLog:
           - column:
               name: name
               type: varchar(255)
-  
   ```
 
 ---
@@ -230,7 +214,6 @@ databaseChangeLog:
               type: int
               constraints:
                 nullable: false
-  
   ```
 
 ---
@@ -276,7 +259,6 @@ databaseChangeLog:
         tableName: example
         oldColumnName: name
         newColumnName: full_name
-  
   ```
 
 ---
@@ -305,7 +287,6 @@ databaseChangeLog:
           - column:
               name: name
               value: 'Sample Data'
-  
   ```
 
 ---
@@ -332,7 +313,6 @@ databaseChangeLog:
           - column:
               name: name
               value: 'Updated Data'
-  
   ```
 
 ---
@@ -354,7 +334,6 @@ databaseChangeLog:
     - delete:
         tableName: example
         where: id=1
-  
   ```
 
 ---
@@ -381,7 +360,6 @@ databaseChangeLog:
         columns:
           - column:
               name: name
-  
   ```
 
 ---
@@ -402,7 +380,6 @@ databaseChangeLog:
     - dropIndex:
         indexName: idx_name
         tableName: example
-  
   ```
 
 ---
@@ -424,7 +401,6 @@ databaseChangeLog:
         class: com.example.CustomTask
         parameters:
           param1: value1
-  
   ```
 
 ---
