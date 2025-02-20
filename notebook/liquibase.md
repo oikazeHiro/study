@@ -1,4 +1,309 @@
-## liquibase
+## liquibase 对比两数据库 生成changelog.yaml 并同步数据库
+
+### 安装 Liquibase
+
+下载连接 ：[Download Liquibase | Liquibase.com](https://www.liquibase.com/download)
+
+
+
+### 运行 `diff-changelog` 命令
+
+```bash
+# 创建一个空文件夹
+liquibase init project
+```
+
+修改配置文件
+
+```properties
+## 初始化项目后会有liquibase.properties 文件
+## 运行之前先将数据库驱动放在 liquibase 安装目录lib 文件夹下
+changeLogFile=example-changelog.sql
+liquibase.command.driver=com.mysql.cj.jdbc.Driver
+## 目标数据库
+liquibase.command.url=jdbc:mysql://118.25.183.36:3306/study_copy?useUnicode=true&characterEncoding=UTF-8
+liquibase.command.username=root
+liquibase.command.password=icui4cu
+## 源数据库
+liquibase.command.referenceUrl=jdbc:mysql://118.25.183.36:3306/study?useUnicode=true&characterEncoding=UTF-8
+liquibase.command.referenceUsername=root    
+liquibase.command.referencePassword=icui4cu
+```
+
+生成changelog.yaml 文件
+
+```bash
+liquibase  --changeLogFile=changelog.yaml diff-changelog
+```
+
+生成结果
+
+```yaml
+databaseChangeLog:
+- changeSet:
+    id: 1740015062024-1
+    author: 15093 (generated)
+    changes:
+    - addColumn:
+        columns:
+        - column:
+            name: name
+            remarks: ����
+            type: VARCHAR(255)
+        tableName: test_liquibase
+
+```
+
+
+
+应用变更日志
+
+```shell
+liquibase --changeLogFile=changelog.yaml update
+```
+
+
+
+## liquibase 命令
+
+### 1. **核心命令**
+
+#### `update`
+
+将 `changelog` 文件中未应用的变更应用到数据库。
+
+```bash
+liquibase update
+```
+
+- **作用**：根据 `changelog` 文件（如 `changelog.xml` 或 `changelog.yaml`）中的变更集（changeSet），更新数据库结构。
+
+- **常用参数**：
+  
+  - `--changelogFile`：指定变更日志文件路径。
+  
+  - `--url`：指定数据库连接 URL。
+  
+  - `--username`：数据库用户名。
+  
+  - `--password`：数据库密码。
+
+#### `updateSQL`
+
+生成 SQL 脚本，但不执行。
+
+```bash
+liquibase updateSQL
+```
+
+#### `rollback`
+
+回滚数据库到指定的变更集
+
+```bash
+liquibase rollbackCount 1
+```
+
+- **作用**：回滚指定数量的变更集。
+
+- **常用参数**：
+  
+  - `--rollbackCount`：回滚的变更集数量。
+  
+  - `--tag`：回滚到指定的标签（tag）。
+
+- **示例**：
+  
+  - 回滚最近 1 个变更集：`liquibase rollbackCount 1`
+  
+  - 回滚到标签 `v1.0`：`liquibase rollback v1.0`
+
+#### `rollbackSQL`
+
+生成回滚 SQL 脚本，但不执行。
+
+```bash
+liquibase rollbackSQL
+```
+
+- **作用**：生成回滚数据库变更的 SQL 脚本，但不会实际执行。
+
+- **适用场景**：用于检查回滚操作将执行的 SQL 语句。
+
+#### `status`
+
+显示数据库的变更状态。
+
+```bash
+liquibase status
+```
+
+- **作用**：检查当前数据库与 `changelog` 文件的差异，显示未应用的变更集。
+
+- **适用场景**：用于检查数据库是否需要更新。
+
+
+
+#### `validate`
+
+验证 `changelog` 文件的正确性。
+
+```bash
+liquibase validate
+```
+
+- **作用**：检查 `changelog` 文件是否有语法错误或逻辑问题。
+
+- **适用场景**：在应用变更之前验证变更日志文件。
+
+#### `generate-changelog`
+
+从现有数据库生成 `changelog` 文件。
+
+```bash
+liquibase generate-changelog
+```
+
+- **作用**：根据当前数据库结构生成一个初始的 `changelog` 文件。
+
+- **常用参数**：
+  
+  - `--changelogFile`：指定生成的变更日志文件路径。
+  
+  - `--diffTypes`：指定生成的变更类型（如表、视图、存储过程等）。
+
+- 示例
+
+```bash
+
+liquibase --changelogFile=changelog.yaml generate-changelog
+```
+
+#### `diff`
+
+比较两个数据库的差异。
+
+```bash
+liquibase diff
+```
+
+- **作用**：比较两个数据库的结构差异。
+
+- **常用参数**：
+  
+  - `--referenceUrl`：参考数据库的 JDBC URL。
+  
+  - `--referenceUsername`：参考数据库的用户名。
+  
+  - `--referencePassword`：参考数据库的密码。
+  
+  - `--url`：目标数据库的 JDBC URL。
+  
+  - `--username`：目标数据库的用户名。
+  
+  - `--password`：目标数据库的密码。
+
+- 示例
+  
+  ```bash
+  liquibase --referenceUrl=jdbc:mysql://localhost:3306/reference_db \
+            --referenceUsername=root \
+            --referencePassword=root \
+            --url=jdbc:mysql://localhost:3306/target_db \
+            --username=root \
+            --password=root \
+            diff
+  ```
+
+#### `diff-changelog`
+
+比较两个数据库的差异并生成 `changelog` 文件。
+
+```bash
+liquibase --referenceUrl=jdbc:mysql://localhost:3306/reference_db \
+          --referenceUsername=root \
+          --referencePassword=root \
+          --url=jdbc:mysql://localhost:3306/target_db \
+          --username=root \
+          --password=root \
+          --changelogFile=diff-changelog.yaml \
+          diff-changelog
+```
+
+### 2. **其他常用命令**
+
+#### `tag`
+
+为当前数据库状态打标签。
+
+```bash
+liquibase tag v1.0
+```
+
+- **作用**：为当前数据库状态打标签，便于后续回滚。
+
+- **示例**：
+
+```bash
+liquibase tag v1.0
+```
+
+#### `history`
+
+显示数据库的变更历史。
+
+```bash
+liquibase history
+```
+
+- **作用**：显示数据库中已应用的变更集历史记录。
+
+#### `future-rollbackSQL`
+
+生成未来回滚的 SQL 脚本。
+
+```bash
+liquibase future-rollbackSQL
+```
+
+**作用**：生成未来回滚当前数据库状态所需的 SQL 脚本
+
+#### `snapshot`
+
+生成数据库的快照。
+
+```bash
+liquibase snapshot
+```
+
+- **作用**：生成当前数据库结构的快照，保存为 JSON 或 YAML 文件。
+
+### 3. **常用参数**
+
+以下是一些通用的 Liquibase 参数：
+
+| 参数                | 说明                                             |
+| ----------------- | ---------------------------------------------- |
+| `--changelogFile` | 指定变更日志文件路径。                                    |
+| `--url`           | 指定数据库连接 URL。                                   |
+| `--username`      | 指定数据库用户名。                                      |
+| `--password`      | 指定数据库密码。                                       |
+| `--driver`        | 指定 JDBC 驱动类名（如 `com.mysql.cj.jdbc.Driver`）。    |
+| `--classpath`     | 指定 JDBC 驱动程序的路径。                               |
+| `--logLevel`      | 设置日志级别（如 `debug`、`info`、`warn`、`error`）。       |
+| `--defaultsFile`  | 指定 Liquibase 配置文件路径（如 `liquibase.properties`）。 |
+
+查看 Liquibase 的帮助文档：
+
+```bash
+liquibase --help
+```
+
+
+
+
+
+## liquibase springboot
 
 #### 引入
 
