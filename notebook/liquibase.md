@@ -61,7 +61,6 @@ databaseChangeLog:
         remarks: 名称
         tableName: test_liquibase
 
-_liquibase
 
 ```
 
