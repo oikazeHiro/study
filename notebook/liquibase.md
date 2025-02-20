@@ -21,13 +21,13 @@ liquibase init project
 changeLogFile=example-changelog.sql
 liquibase.command.driver=com.mysql.cj.jdbc.Driver
 ## 目标数据库
-liquibase.command.url=jdbc:mysql://118.25.183.36:3306/study_copy?useUnicode=true&characterEncoding=UTF-8
-liquibase.command.username=root
-liquibase.command.password=icui4cu
+liquibase.command.url=jdbc:mysql://ip:3306/study_copy?useUnicode=true&characterEncoding=UTF-8
+liquibase.command.username=username
+liquibase.command.password=password
 ## 源数据库
-liquibase.command.referenceUrl=jdbc:mysql://118.25.183.36:3306/study?useUnicode=true&characterEncoding=UTF-8
-liquibase.command.referenceUsername=root    
-liquibase.command.referencePassword=icui4cu
+liquibase.command.referenceUrl=jdbc:mysql://ip:3306/study?useUnicode=true&characterEncoding=UTF-8
+liquibase.command.referenceUsername=username
+liquibase.command.referencePassword=password
 ```
 
 生成changelog.yaml 文件
@@ -41,16 +41,27 @@ liquibase  --changeLogFile=changelog.yaml diff-changelog
 ```yaml
 databaseChangeLog:
 - changeSet:
-    id: 1740015062024-1
+    id: 1740016593264-2
     author: 15093 (generated)
     changes:
     - addColumn:
         columns:
         - column:
-            name: name
-            remarks: ����
+            name: phone
+            remarks: 电话
             type: VARCHAR(255)
         tableName: test_liquibase
+- changeSet:
+    id: 1740016593264-1
+    author: 15093 (generated)
+    changes:
+    - setColumnRemarks:
+        columnDataType: varchar(255)
+        columnName: name
+        remarks: 名称
+        tableName: test_liquibase
+
+_liquibase
 
 ```
 
