@@ -82,7 +82,8 @@ Hello! How can I assist you today? 😊
 ### Python 实现
 以下是实现希尔排序的示例代码：
 
-```python
+python
+
 def shellsort(arr):
     n = len(arr)
     h = n // 2
@@ -93,7 +94,7 @@ def shellsort(arr):
             arr[i::h] = sorted(arr[i::h], reverse=True)
 
         h = n // 2
-```
+
 
 ### 时间复杂度
 希尔排序的时间复杂度取决于初始间隔和最终间隔的选择。在最坏情况下，其时间复杂度为 O(n²)，但在平均情况下通常更快。
