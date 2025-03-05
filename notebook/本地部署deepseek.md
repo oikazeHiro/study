@@ -111,27 +111,66 @@ def shellsort(arr):
 
 #### 准备环境
 
-1.docker 
+> 1.docker  windows上也可以下载docker
 
-2.rag开源项目 ragflow maxkb 等
+> 2.rag开源项目 ragflow maxkb 等
 
 #### 使用 ragflow
 
 ```bash
+# 文档：https://github.com/infiniflow/ragflow/blob/main/README_zh.md
 # 克隆仓库
 git clone https://github.com/infiniflow/ragflow.git
 ```
 
+```bash
+cd ragflow/docker
+# 修改.env文件 
+# 将 RAGFLOW_IMAGE=infiniflow/ragflow:v0.17.0-slim 修改为 RAGFLOW_IMAGE=infiniflow/ragflow:v0.17.0
+# slim 不具备嵌套模型
+RAGFLOW_IMAGE=infiniflow/ragflow:v0.17.0
+```
 
+```bash
+# 启动ragflow
+cd ragflow/docker
+docker compose -f docker-compose.yml up -d
+```
 
+运行完成
 
+![raghome](./assets/ragfowhome.jpg)
 
+添加模型
 
+![添加模型](./assets/addModels.jpg)
+
+![addForm](./assets/addModelForm.jpg)
+
+设置模型
+
+![setting](./assets/settingModel.jpg)
+
+创建知识库
+
+![创建知识库](./assets/chanjianzhishiku.jpg)
+
+    
+
+![kusetting](./assets/kuSetting.jpg)
+
+上传文档
+
+![shanchuan](./assets/shangchuanwend.jpg)
+
+解析文档
+
+![解析文档](./assets/解析文档.jpg)
+
+![食品安全标准](./assets/食品安全标准.jpg)
 
 
 
 
 
 #### 使用 maxkb
-
-
