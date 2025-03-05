@@ -169,8 +169,31 @@ docker compose -f docker-compose.yml up -d
 
 ![食品安全标准](./assets/食品安全标准.jpg)
 
-
-
-
-
 #### 使用 maxkb
+
+运行
+
+```bash
+# Linux 机器
+docker run -d --name=maxkb --restart=always -p 8080:8080 -v ~/.maxkb:/var/lib/postgresql/data -v ~/.python-packages:/opt/maxkb/app/sandbox/python-packages registry.fit2cloud.com/maxkb/maxkb
+
+# Windows 机器
+docker run -d --name=maxkb --restart=always -p 8080:8080 -v C:/maxkb:/var/lib/postgresql/data -v C:/python-packages:/opt/maxkb/app/sandbox/python-packages registry.fit2cloud.com/maxkb/maxkb
+
+# 用户名: admin
+# 密码: MaxKB@123..
+```
+
+添加模型
+
+![添加模型](./assets/maxkb添加模型.jpg)
+
+![form](./assets/maxkb添加模型表单.jpg)
+
+创建知识库
+
+![添加知识库](./assets/maxkb添加知识库.jpg)
+
+测试
+
+![测试](./assets/maxkb测试.jpg)
