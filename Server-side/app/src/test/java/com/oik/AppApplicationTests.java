@@ -1,6 +1,7 @@
 package com.oik;
 
 import com.oik.common.utils.Encrypt;
+import com.oik.common.utils.MD5Utils;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,9 +13,6 @@ import java.io.File;
 @SpringBootTest()
 @ActiveProfiles("test")
 class AppApplicationTests {
-
-    @Resource
-    private SysUserService sysUserService;
 
     @Resource
     private PasswordEncoder passwordEncoder;
@@ -35,14 +33,16 @@ class AppApplicationTests {
         System.out.println(new File(System.getProperty("user.dir")).getParent());
     }
 
-    @Test
-    void userTest(){
-        sysUserService.list().forEach(System.out::println);
-    }
 
     @Test
     void passwordTest(){
-        System.out.println(passwordEncoder.encode("123456"));
+        String number = "123456";
+        String s = MD5Utils.md5(number);
+        System.out.println(s);
+        String encode = passwordEncoder.encode(s);
+        System.out.println(encode);
+        boolean matches = passwordEncoder.matches(s, encode);
+        System.out.println(matches);
     }
 
 }

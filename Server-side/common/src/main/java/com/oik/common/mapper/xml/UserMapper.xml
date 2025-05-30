@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="generator.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="generator.User">
+            <id property="userId" column="user_id" />
+            <result property="username" column="username" />
+            <result property="passwordHash" column="password_hash" />
+            <result property="realname" column="realname" />
+            <result property="email" column="email" />
+            <result property="mobile" column="mobile" />
+            <result property="departmentId" column="department_id" />
+            <result property="isLocked" column="is_locked" />
+            <result property="createdBy" column="created_by" />
+            <result property="createdTime" column="created_time" />
+            <result property="updatedBy" column="updated_by" />
+            <result property="updatedTime" column="updated_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_id,username,password_hash,realname,email,mobile,
+        department_id,is_locked,created_by,created_time,updated_by,
+        updated_time
+    </sql>
+</mapper>

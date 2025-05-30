@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan("com.oik.mapper")
+@MapperScan({"com.oik.mapper", "com.oik.common.mapper"})
 public class AppApplication {
 
     public static void main(String[] args) {

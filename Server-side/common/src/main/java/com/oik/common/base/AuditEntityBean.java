@@ -1,10 +1,12 @@
 package com.oik.common.base;
 
 import com.baomidou.mybatisplus.annotation.TableField;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
+@Data
 public class AuditEntityBean implements Serializable {
     @TableField(value = "created_by")
     private String createdBy;
