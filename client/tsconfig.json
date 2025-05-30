@@ -3,7 +3,11 @@
     "baseUrl": "./",
     "paths": {
       "~/*": ["src/*"]
-    }
+    },
+    "module": "es2020", // 或更高版本如 "esnext"
+    "moduleResolution": "node",
+    "target": "es2020",
+    "types": ["vite/client"] // 添加vite类型支持
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
 }

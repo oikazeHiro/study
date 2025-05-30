@@ -1,15 +1,15 @@
 server:
-  port: 8080
+  port: 8999
 
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: mpw:LUotCMqUiRP4OWYvRhyPJ93Ae53hy174FDLU3di7/PEGwsx9D/L+1TImeTNoEigFYfjHxcxO6CUpRnlq6I9Dl4RzNtR5TJ0qESqezO3jdRwAcdBDQIAE3MSX7mf1LJemYPkLbuRMdlmvi9ksDNjCNiWYFrkjUQBJA59yQ4zHNVzGhHPvCpgwhMvR8Bfs0tjy
-    username: mpw:tuI9qo5UWVRSmcNfb7N5xg==
-    password: mpw:0jfWe1ZtwCNcOmD4pj94Kg==
+    url: jdbc:mysql://127.0.0.1:3306/study?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+    username: root
+    password: icui4cu
 
 study:
-  db-type: mysql
+  db-type: mariadb
 
 # 配置 Mybatis-Plus 的全局配置
 mybatis-plus:

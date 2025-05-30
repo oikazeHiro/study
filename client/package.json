@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "dev": "vite  --mode development",
+    "build": "vue-tsc -b && vite build --mode production",
     "preview": "vite preview"
   },
   "dependencies": {
     "@vueuse/core": "^13.2.0",
+    "axios": "^1.9.0",
     "element-plus": "^2.9.11",
     "vue": "^3.5.14",
     "vue-router": "^4.5.1"

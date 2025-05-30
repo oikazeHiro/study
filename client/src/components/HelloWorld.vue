@@ -1,5 +1,4 @@
 <template>
-
   <div class="card">
     <button type="button" @click="toggleDark()">count is {{ count }}</button>
   </div>

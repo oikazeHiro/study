@@ -3,7 +3,7 @@ plugins {
     // 定义项目为Java项目
     id 'java'
     // 使用Spring Boot插件
-    id 'org.springframework.boot' version '3.3.4'
+    id 'org.springframework.boot' version '3.5.0'
     // 使用Spring依赖管理插件
     id 'io.spring.dependency-management' version '1.1.6'
 }
@@ -39,8 +39,8 @@ repositories {
 
 // 扩展项目对象，设置Spring Boot版本
 ext {
-    set('springBootVersion', "3.3.4")
-    springBootVersion = "3.3.4"
+    set('springBootVersion', "3.5.0")
+    springBootVersion = "3.5.0"
 }
 
 // 应用到所有子项目
@@ -72,12 +72,14 @@ subprojects {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     ext {
-        set('springBootVersion', "3.3.4")
-        springBootVersion = "3.3.4"
+        set('springBootVersion', "3.5.0")
+        springBootVersion = "3.5.0"
     }
     dependencies {
         // 添加Web启动依赖
         implementation 'org.springframework.boot:spring-boot-starter-web'
+        // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
+        implementation 'org.springframework.boot:spring-boot-starter-security'
         // 添加测试启动依赖
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
         // 添加JUnit平台启动器
@@ -88,13 +90,22 @@ subprojects {
         compileOnly 'org.projectlombok:lombok'
         // 指定 Lombok 为注解处理器，用于处理 Lombok 注解，自动生成代码，如getter、setter等方法
         annotationProcessor 'org.projectlombok:lombok'
+        // https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-api
+        implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+        // https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-impl
+        runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+        // https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt-jackson
+        runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+        // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+        implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.0'
         // 引入 MyBatis-Plus 的 Spring Boot Starter 包，用于简化 MyBatis 的配置和使用
-        implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.8'
+        implementation 'com.baomidou:mybatis-plus-spring-boot3-starter:3.5.12'
+        // https://mvnrepository.com/artifact/com.baomidou/mybatis-plus-jsqlparser
+        implementation 'com.baomidou:mybatis-plus-jsqlparser:3.5.12'
         // 引入 MyBatis-Plus 的 Spring Boot Starter 包，用于简化 MyBatis 的配置和使用
-        implementation 'com.github.yulichang:mybatis-plus-join-boot-starter:1.5.0'
+        implementation 'com.github.yulichang:mybatis-plus-join-boot-starter:1.5.3'
         // mysql-connector-j
-        implementation 'com.mysql:mysql-connector-j:9.0.0'
-
+        implementation 'com.mysql:mysql-connector-j:9.3.0'
     }
     dependencyManagement {
         // 导入Spring Boot依赖管理
