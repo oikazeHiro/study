@@ -10,6 +10,13 @@ spring:
 
 study:
   db-type: mysql
+  email:
+    form: 15093959810@163.com  # 发件人邮箱
+    password: LKbZgmuJ4nE9pxMs  # 163邮箱的授权码（不是登录密码）
+    host: smtp.163.com       # SMTP服务器地址
+    protocol: smtp           # 协议
+  skip-validation:
+    - /auth/authenticate
 
 # 配置 Mybatis-Plus 的全局配置
 mybatis-plus:

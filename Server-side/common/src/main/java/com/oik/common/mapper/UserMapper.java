@@ -1,7 +1,7 @@
 package com.oik.common.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.oik.common.base.User;
+import com.oik.common.base.AuthUser;
 
 /**
 * @author 15093
@@ -9,7 +9,7 @@ import com.oik.common.base.User;
 * @createDate 2025-05-30 16:31:15
 * @Entity generator.User
 */
-public interface UserMapper extends BaseMapper<User> {
+public interface UserMapper extends BaseMapper<AuthUser> {
 
 }
 

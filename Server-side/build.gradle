@@ -78,14 +78,19 @@ subprojects {
     dependencies {
         // 添加Web启动依赖
         implementation 'org.springframework.boot:spring-boot-starter-web'
-        // https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-security
+        // 安全框架
         implementation 'org.springframework.boot:spring-boot-starter-security'
         // 添加测试启动依赖
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        // redis
+        implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+        // 验证
+        implementation 'org.springframework.boot:spring-boot-starter-validation:3.5.0'
         // 添加JUnit平台启动器
         testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         // 使用Spring Boot的配置处理器插件，以支持@ConditionalOnProperty等注解的处理
         annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+        compileOnly 'org.springframework.boot:spring-boot-configuration-processor'
         // 在编译阶段添加 Lombok 依赖，以便在编译时能够使用 Lombok 提供的注解增强功能
         compileOnly 'org.projectlombok:lombok'
         // 指定 Lombok 为注解处理器，用于处理 Lombok 注解，自动生成代码，如getter、setter等方法
@@ -106,6 +111,9 @@ subprojects {
         implementation 'com.github.yulichang:mybatis-plus-join-boot-starter:1.5.3'
         // mysql-connector-j
         implementation 'com.mysql:mysql-connector-j:9.3.0'
+        // https://mvnrepository.com/artifact/com.sun.mail/javax.mail
+        implementation 'com.sun.mail:javax.mail:1.6.2'
+
     }
     dependencyManagement {
         // 导入Spring Boot依赖管理

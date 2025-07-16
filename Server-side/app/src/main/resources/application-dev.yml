@@ -7,9 +7,23 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/study?useSSL=false&serverTimezone=UTC&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
     username: root
     password: icui4cu
+  data:
+    redis:
+      host: 127.0.0.1
+      database: 0
+      port: 6379
+      timeout: 2000
 
 study:
-  db-type: mariadb
+  db-type: mysql
+  email:
+    form: 15093959810@163.com  # 发件人邮箱
+    password: LKbZgmuJ4nE9pxMs  # 163邮箱的授权码（不是登录密码）
+    host: smtp.163.com       # SMTP服务器地址
+    protocol: smtp           # 协议
+  skip-validation:
+    - /auth/authenticate
+
 
 # 配置 Mybatis-Plus 的全局配置
 mybatis-plus:

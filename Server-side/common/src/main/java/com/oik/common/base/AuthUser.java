@@ -4,18 +4,24 @@ package com.oik.common.base;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
 
 import java.io.Serializable;
-
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @TableName user
  */
 @TableName(value = "user")
-@Data
-public class User extends AuditEntityBean implements Serializable {
+@Getter
+@Setter
+public class AuthUser extends User implements Serializable {
 
     /**
      * 用户ID
@@ -58,5 +64,20 @@ public class User extends AuditEntityBean implements Serializable {
      */
     @TableField("is_locked")
     private Integer isLocked;
+    @TableField(value = "created_by")
+    private String createdBy;
+    @TableField(value = "updated_by")
+    private String updatedBy;
+    @TableField(value = "created_time")
+    private LocalDateTime createTime;
+    @TableField(value = "updated_time")
+    private LocalDateTime updateTime;
 
+    public AuthUser(String username, String password, Collection<? extends GrantedAuthority> authorities) {
+        super(username, password, authorities);
+    }
+
+    public List<Role> getRoles() {
+        return new ArrayList<>();
+    }
 }

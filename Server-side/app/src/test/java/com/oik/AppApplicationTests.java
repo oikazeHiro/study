@@ -2,6 +2,7 @@ package com.oik;
 
 import com.oik.common.utils.Encrypt;
 import com.oik.common.utils.MD5Utils;
+import com.oik.common.utils.EmailUtil;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ class AppApplicationTests {
 
     @Resource
     private PasswordEncoder passwordEncoder;
+
 
     @Test
     void contextLoads() {
@@ -36,13 +38,22 @@ class AppApplicationTests {
 
     @Test
     void passwordTest(){
-        String number = "123456";
-        String s = MD5Utils.md5(number);
+        String number = "nuct888";
+        String s = MD5Utils.md5Upper(number);
         System.out.println(s);
-        String encode = passwordEncoder.encode(s);
-        System.out.println(encode);
-        boolean matches = passwordEncoder.matches(s, encode);
-        System.out.println(matches);
+//        String encode = passwordEncoder.encode(s);
+//        System.out.println(encode);
+//        boolean matches = passwordEncoder.matches(s, encode);
+//        System.out.println(matches);
+    }
+
+
+    @Resource
+    private EmailUtil emailUtil;
+    @Test
+    void sendEmail(){
+        String to = "2889295938@qq.com";
+        emailUtil.sendEmail("来自望天长叹帅", "测试", to);
     }
 
 }

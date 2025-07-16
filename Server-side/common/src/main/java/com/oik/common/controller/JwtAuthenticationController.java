@@ -1,6 +1,7 @@
 package com.oik.common.controller;
 
 import com.oik.common.utils.JwtTokenUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
+@Slf4j
 public class JwtAuthenticationController {
 
     @Autowired
@@ -35,7 +37,7 @@ public class JwtAuthenticationController {
                 .loadUserByUsername(authenticationRequest.getUsername());
 
         final String token = jwtTokenUtil.generateToken(userDetails);
-
+        log.info("Generated token: {}", token);
         return ResponseEntity.ok(new JwtResponse(token));
     }
 
