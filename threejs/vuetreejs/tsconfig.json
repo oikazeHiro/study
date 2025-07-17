@@ -1,16 +1,19 @@
 {
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler", // 改为 Bundler 适配 Vite
     "baseUrl": "./",
     "paths": {
-      "~/*": [
-        "src/*"
-      ]
+      "@/*": ["src/*"],
+      "~/*": ["src/*"],
+      "three/examples/jsm/*": ["node_modules/three/examples/jsm/*"]
     },
+    "types": ["vite/client"] // 添加 Vite 类型
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue"
-  ],
+    "src/**/*.vue",
+    "vite.config.ts" // 包含配置文件
+  ]
 }
