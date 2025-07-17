@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>title</title>
+</head>
+
+<body>
+    <script type="importmap">
+			{
+				"imports": {
+					"three": "../../../../../three.js/build/three.module.js",
+                    "three/addons/": "../../../../../three.js/examples/jsm/"
+				}
+			}
+	</script>
+    <script type="module">
+        // ...existing code...
+        // 导入three.js库
+        import * as THREE from 'three';
+
+        // 创建场景
+        const scene = new THREE.Scene();
+
+        // 创建立方体几何体，尺寸为100x100x100
+        const geometry = new THREE.BoxGeometry(100, 100, 100);
+
+        // 创建材质，颜色为绿色
+        const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+
+        // 创建网格对象（立方体），并应用几何体和材质
+        const cube = new THREE.Mesh(geometry, material);
+
+        // 设置立方体的位置，y轴为10
+        cube.position.set(0, 10, 0);
+
+        // 打印立方体对象到控制台
+        console.log("cube", cube);
+
+        // 将立方体添加到场景中
+        scene.add(cube);
+
+        // 设置渲染宽高
+        const width = 800;
+        const height = 600;
+
+        // 创建透视相机，视角45度，宽高比，近裁剪面1，远裁剪面1000
+        const camera = new THREE.PerspectiveCamera(45, width / height, 1, 1000);
+
+        // 设置相机位置
+        camera.position.set(200, 200, 200);
+
+        // 让相机看向场景中心
+        camera.lookAt(0, 0, 0);
+
+        // 创建WebGL渲染器
+        const renderer = new THREE.WebGLRenderer();
+
+        // 设置渲染器尺寸
+        renderer.setSize(width, height);
+
+        // 渲染场景和相机
+        renderer.render(scene, camera);
+
+        // 将渲染结果添加到页面body中
+        document.body.appendChild(renderer.domElement);
+    </script>
+</body>
+
+</html>
