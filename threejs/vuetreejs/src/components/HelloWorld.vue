@@ -28,7 +28,17 @@ const toFirst = (path: string) => {
 </script>
 
 <style scoped>
-.read-the-docs {
-  color: #888;
+.el-container {
+  height: 98vh;
+  overflow: hidden;
+}
+
+.el-aside {
+  width: 120px !important; /* 固定侧边栏宽度 */
+}
+
+.el-main {
+  padding: 0 !important;
+  overflow: hidden; /* 新增 */
 }
 </style>
