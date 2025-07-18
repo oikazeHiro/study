@@ -1,17 +1,12 @@
 import { createWebHistory, createRouter } from 'vue-router';
+import {routerData} from '@/utils/dataUtil'
 
 const routes = [
   {
     path: '/',
     component: () => import('@/components/HelloWorld.vue'),
-    name: 'Home',
-    children: [
-      {
-        path: 'first', // 子路由 path 不加斜杠
-        component: () => import('@/components/example/First.vue'),
-        name: 'First',
-      }
-    ]
+    name: '',
+    children: routerData
   }
 ];
 

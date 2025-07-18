@@ -2,7 +2,7 @@
   <el-container>
     <el-aside>
       <el-row v-for="route in routes" :key="route.path">
-        <el-button @click="toFirst(route.path)">
+        <el-button v-if="!!route.name" @click="toFirst(route.path)">
           {{ route.name }}
         </el-button>
       </el-row>
@@ -16,6 +16,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router';
+import {Stats, THREE} from "@/utils/three-modules";
 
 const router = useRouter();
 const routes = ref(router.getRoutes());
@@ -24,6 +25,10 @@ const toFirst = (path: string) => {
   // 跳转到第一个组件
   router.push(path);
 }
+
+const clock = new THREE.Clock()
+// 创建stats
+const stats = new Stats()
 
 </script>
 
