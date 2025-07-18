@@ -24,7 +24,9 @@ export type {
     Mesh,
     BoxGeometry,
     MeshBasicMaterial,
-    AxesHelper
+    AxesHelper,
+    Color,
+    ColorRepresentation,
 } from 'three';
 
 export type {
@@ -32,20 +34,25 @@ export type {
     GUIController
 } from 'dat.gui';
 
+// 定义 MyAxis 类
+// 这个类可以用于物体的旋转和步进和位置
 export class MyAxis{
     x: number;
     y: number;
     z: number;
-    zStep: number;
+    xStep: number;
     yStep: number;
-    ZStep: number;
+    zStep: number;
+    isXRotary: boolean = false;
+    isYRotary: boolean = false;
+    isZRotary: boolean = false;
     constructor() {
         this.x = 0;
         this.y = 0
         this.z = 0;
-        this.zStep = 0.1;
-        this.yStep = 0.1;
-        this.ZStep = 0.1;
+        this.xStep = 0.01;
+        this.yStep = 0.01;
+        this.zStep = 0.01;
     }
     setX(x:number){
         this.x = x;
@@ -57,6 +64,30 @@ export class MyAxis{
     }
     setZ(z:number){
         this.z = z;
+        return this;
+    }
+    setXStep(xStep:number){
+        this.xStep = xStep;
+        return this;
+    }
+    setYStep(yStep:number){
+        this.yStep = yStep;
+        return this;
+    }
+    setZStep(zStep:number){
+        this.zStep = zStep;
+        return this;
+    }
+    setXRotary(isXRotary:boolean){
+        this.isXRotary = isXRotary;
+        return this;
+    }
+    setYRotary(isYRotary:boolean){
+        this.isYRotary = isYRotary;
+        return this;
+    }
+    setZRotary(isZRotary:boolean){
+        this.isZRotary = isZRotary;
         return this;
     }
 }

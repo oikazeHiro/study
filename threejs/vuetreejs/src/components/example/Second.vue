@@ -7,9 +7,9 @@
 </template>
 
 <script lang="ts" setup>
-import {onMounted, onUnmounted, ref} from 'vue'
-import {OrbitControls, Stats, THREE,dat,MyAxis} from '~/utils/three-modules'
-import {debounce} from "lodash-es";
+import { onMounted, onUnmounted, ref } from 'vue'
+import { OrbitControls, Stats, THREE, dat, MyAxis, ColorRepresentation } from '~/utils/three-modules'
+import { debounce } from "lodash-es";
 // DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)
 
@@ -26,10 +26,18 @@ const renderer = new THREE.WebGLRenderer({
 const clock = new THREE.Clock()
 
 const gui = new dat.GUI()
+const mod = gui.addFolder('模型控制')
+const myAxis = new MyAxis()
+mod.add(myAxis, 'xStep', 0.01, 1).name('X轴旋转步进').step(myAxis.xStep)
+mod.add(myAxis, 'yStep', 0.01, 1).name('Y轴旋转步进').step(myAxis.yStep)
+mod.add(myAxis, 'zStep', 0.01, 1).name('Z轴旋转步进').step(myAxis.zStep)
+mod.add(myAxis, 'isXRotary').name('X轴旋转')
+mod.add(myAxis, 'isYRotary').name('Y轴旋转')
+mod.add(myAxis, 'isZRotary').name('Z轴旋转')
 // 创建 |控制器
 const stats = new Stats()
 // 创建 |模型
-const cubes: Array<THREE.Mesh<THREE.OctahedronGeometry, THREE.MeshLambertMaterial>> = []
+const cubes: Array<THREE.Mesh<THREE.OctahedronGeometry, THREE.Material>> = []
 // 创建 |控制器
 let controls: OrbitControls | null = null
 // 动画帧ID
@@ -39,7 +47,7 @@ const initScene = () => {
   // 创建 |模型
   const geometry = new THREE.OctahedronGeometry(1, 0);
   // 创建材质
-  const material = new THREE.MeshLambertMaterial({
+  const material = new THREE.MeshPhongMaterial({
     // 颜色
     color: 0xf7f709,
     // 透明
@@ -47,26 +55,37 @@ const initScene = () => {
     // 透明度
     opacity: 0.5
   })
+
+  const mat = gui.addFolder('材质控制')
+  mat.addColor(material, 'color').name('颜色').onChange((value: any) => {
+    material.color = material.color = new THREE.Color(value.r, value.g, value.b);
+     material.needsUpdate = true; 
+  })
+  mat.add(material, 'transparent').name('透明材质')
+  mat.add(material, 'opacity', 0, 1).name('透明度').step(0.01)
+
   // 创建 |模型
   const cube = new THREE.Mesh(geometry, material)
-  gui.add(cube.position, 'x', -5,5).name('x轴位置').step(0.1)
-  gui.add(cube.position, 'y', -5,5).name('y轴位置').step(0.1)
-  gui.add(cube.position, 'z', -5,5).name('z轴位置').step(0.1)
+  mod.add(cube.position, 'x', -5, 5).name('x轴位置').step(0.1)
+  mod.add(cube.position, 'y', -5, 5).name('y轴位置').step(0.1)
+  mod.add(cube.position, 'z', -5, 5).name('z轴位置').step(0.1)
   // 添加 |模型
   cubes.push(cube)
   // 添加 |模型
   scene.add(cube)
   // 添加 |环境光
-  const ambientLight = new THREE.AmbientLight(0x404040);
-  gui.add(ambientLight, 'intensity', 0, 2).name('环境光强度').step(0.1)
+  const light = gui.addFolder('光源控制')
+  const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+  light.add(ambientLight, 'intensity', 0, 2).name('环境光强度').step(0.1)
   scene.add(ambientLight)
   // 添加 |平行光
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
-  gui.add(directionalLight, 'intensity', 0, 2).name('平行光强度').step(0.1)
+  light.add(directionalLight, 'intensity', 0, 2).name('平行光强度').step(0.1)
   // 设置 |平行光位置
   directionalLight.position.set(10, 10, 10)
   // 添加 |平行光
   scene.add(directionalLight)
+
   // 辅助工具
   // 添加 |坐标轴
   scene.add(new THREE.AxesHelper(2))
@@ -91,7 +110,15 @@ const animate = () => {
   stats.update()
   // 旋转立方体
   cubes.map(cube => {
-    cube.rotation.y += 0.01
+    if (myAxis.isXRotary) {
+      cube.rotation.x += myAxis.xStep
+    }
+    if (myAxis.isYRotary) {
+      cube.rotation.y += myAxis.yStep
+    }
+    if (myAxis.isZRotary) {
+      cube.rotation.z += myAxis.zStep
+    }
   })
   // 更新控制器
   controls?.update()
@@ -101,7 +128,7 @@ const animate = () => {
 const initThree = () => {
   if (!canvasContainer.value) return
   // 设置渲染器
-  const {clientWidth: width, clientHeight: height} = canvasContainer.value
+  const { clientWidth: width, clientHeight: height } = canvasContainer.value
   renderer.setSize(width, height)
   console.log(window.devicePixelRatio)
   // 设置像素比
@@ -182,6 +209,7 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   position: relative;
-  touch-action: none; /* 防止触摸事件冲突 */
+  touch-action: none;
+  /* 防止触摸事件冲突 */
 }
 </style>

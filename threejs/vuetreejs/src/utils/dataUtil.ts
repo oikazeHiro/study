@@ -9,6 +9,11 @@ let routerData = [
         component: () => import('@/components/example/Second.vue'),
         name: '第二个实例',
     },
+    {
+          path: 'modtest',
+        component: () => import('@/components/example/ModTest.vue'),
+        name: '测试模型',
+    },
 ];
 
 
