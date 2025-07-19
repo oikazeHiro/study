@@ -1,108 +1,38 @@
 <template>
-    <!-- 使用 Element Plus 的布局容器 -->
     <el-container>
         <el-main>
-            <!-- three.js 渲染容器 -->
-            <div ref="canvasContainer" class="three-container"></div>
+            <el-tabs v-model="activeTab" :tab-position="tabPosition" class="full-height-tabs">
+                <el-tab-pane label="点模型" name="points" lazy>
+                    <PointsMod ref="pointsModRef" v-if="activeTab == 'points'" />
+                </el-tab-pane>
+                <el-tab-pane label="线模型" name="line" lazy>
+                    <LineMod ref="lineModRef" v-if="activeTab == 'line'" />
+                </el-tab-pane>
+                <el-tab-pane label="三角面" name="face" lazy>
+                     <FaceMod ref="faceModRef" v-if="activeTab == 'face'" />
+                </el-tab-pane>
+                <el-tab-pane label="四边形" name="quad" lazy>
+                    <QuadMod v-if="activeTab == 'quad'" />
+                </el-tab-pane>
+            </el-tabs>
         </el-main>
     </el-container>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
-import { THREE, OrbitControls, Stats } from '~/utils/three-modules'
-import { points } from '~/models/FirstMod'
-import { debounce } from "lodash-es";
+import {ref} from 'vue'
+import type {TabsInstance} from 'element-plus'
+import PointsMod from '~/components/example/mod/PointsMod.vue'
+import LineMod from '~/components/example/mod/LineMod.vue'
+import FaceMod from "~/components/example/mod/FaceMod.vue";
+import QuadMod from "@/components/example/mod/QuadMod.vue";
 
-// three.js 容器 DOM 引用
-const canvasContainer = ref<HTMLElement | null>(null)
 
-let animationFrameId: number = 0 // 动画帧 ID
-const scene = new THREE.Scene() // 创建场景
-let controls: OrbitControls | null = null // 轨道控制器
-scene.add(points) // 添加模型点云
-const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000) // 透视相机
-const renderer = new THREE.WebGLRenderer({
-    antialias: true, // 抗锯齿
-    alpha: true      // 透明背景
-})
-const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // 环境光
-scene.add(ambientLight)
-scene.add(new THREE.AxesHelper(15)) // 坐标轴辅助器
+const tabPosition = ref<TabsInstance['tabPosition']>('left')
+const activeTab = ref<string>('points')
 
-// 处理窗口尺寸变化
-const handleResize = () => {
-    if (!canvasContainer.value) return
-    const width = canvasContainer.value.clientWidth
-    const height = canvasContainer.value.clientHeight
-    camera.aspect = width / height
-    camera.updateProjectionMatrix()
-    renderer.setSize(width, height)
-}
-// 防抖处理窗口尺寸变化
-let debouncedResize = debounce(handleResize, 100)
-
-const stats = new Stats() // 性能监控面板
-
-// 动画循环
-const animate = () => {
-    animationFrameId = requestAnimationFrame(animate)
-    stats.update()
-    controls?.update()
-    renderer.render(scene, camera)
-}
-
-// three.js 初始化
-const initThree = () => {
-    if (!canvasContainer.value) return
-    const { clientWidth: width, clientHeight: height } = canvasContainer.value
-    renderer.setSize(width, height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setClearColor(0xf0f0f0)
-    canvasContainer.value.appendChild(renderer.domElement)
-    camera.aspect = width / height
-    camera.position.set(10, 10, 10)
-    camera.lookAt(0, 0, 0)
-    camera.updateProjectionMatrix()
-    // 设置 stats 面板样式
-    stats.domElement.style.cssText = `
-    position: absolute;
-    top: 0;
-    left: 0;
-    cursor: pointer;
-    opacity: 0.9;
-  `
-    canvasContainer.value.appendChild(stats.domElement)
-    // 初始化轨道控制器
-    controls = new OrbitControls(camera, renderer.domElement)
-    controls.target.set(0, 0, 0)
-    controls.enableDamping = true
-    controls.dampingFactor = 0.05
-}
-
-// 生命周期：组件挂载
-onMounted(() => {
-    initThree()
-    window.addEventListener('resize', debouncedResize)
-    handleResize()
-    animate()
-})
-
-// 生命周期：组件卸载，清理资源
-onUnmounted(() => {
-    window.removeEventListener('resize', debouncedResize)
-    cancelAnimationFrame(animationFrameId)
-    controls?.dispose()
-    // 释放场景中所有 mesh 的几何体和材质
-    scene.traverse(obj => {
-        if (obj instanceof THREE.Mesh) {
-            obj.geometry?.dispose()
-            obj.material?.dispose()
-        }
-    })
-    renderer.dispose()
-    debouncedResize.cancel() // 清理防抖函数
-})
+const pointsModRef = ref<InstanceType<typeof PointsMod>>()
+const lineModRef = ref<InstanceType<typeof LineMod>>()
 </script>
 
 <style scoped>
@@ -115,12 +45,25 @@ onUnmounted(() => {
 .el-main {
     padding: 0 !important;
     overflow: hidden;
+    height: 100%;
 }
 
-.three-container {
-    width: 100%;
+/* 新增的样式 */
+.full-height-tabs {
     height: 100%;
-    position: relative;
-    touch-action: none;
+}
+
+:deep(.el-tabs__content) {
+    flex: 1;
+    overflow: hidden;
+}
+
+:deep(.el-tab-pane) {
+    height: 100%;
+}
+
+:deep(.el-tabs--left .el-tabs__content),
+:deep(.el-tabs--right .el-tabs__content) {
+    height: 100%;
 }
 </style>
