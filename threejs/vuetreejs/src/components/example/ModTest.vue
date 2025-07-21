@@ -1,31 +1,43 @@
 <template>
-    <el-container>
-        <el-main>
-            <el-tabs v-model="activeTab" :tab-position="tabPosition" class="full-height-tabs">
-                <el-tab-pane label="点模型" name="points" lazy>
-                    <PointsMod ref="pointsModRef" v-if="activeTab == 'points'" />
-                </el-tab-pane>
-                <el-tab-pane label="线模型" name="line" lazy>
-                    <LineMod ref="lineModRef" v-if="activeTab == 'line'" />
-                </el-tab-pane>
-                <el-tab-pane label="三角面" name="face" lazy>
-                     <FaceMod ref="faceModRef" v-if="activeTab == 'face'" />
-                </el-tab-pane>
-                <el-tab-pane label="四边形" name="quad" lazy>
-                    <QuadMod v-if="activeTab == 'quad'" />
-                </el-tab-pane>
-            </el-tabs>
-        </el-main>
-    </el-container>
+  <el-container>
+    <el-main>
+      <el-tabs v-model="activeTab" :tab-position="tabPosition" class="full-height-tabs">
+        <el-tab-pane label="点模型" lazy name="points">
+          <PointsMod v-if="activeTab == 'points'" ref="pointsModRef"/>
+        </el-tab-pane>
+        <el-tab-pane label="线模型" lazy name="line">
+          <LineMod v-if="activeTab == 'line'" ref="lineModRef"/>
+        </el-tab-pane>
+        <el-tab-pane label="三角面" lazy name="face">
+          <FaceMod v-if="activeTab == 'face'" ref="faceModRef"/>
+        </el-tab-pane>
+        <el-tab-pane label="四边形" lazy name="quad">
+          <QuadMod v-if="activeTab == 'quad'"/>
+        </el-tab-pane>
+        <el-tab-pane label="坐标" lazy name="axes">
+          <AxesMod v-if="activeTab == 'axes'"/>
+        </el-tab-pane>
+        <el-tab-pane label="地球" lazy name="earth">
+          <EarthMod v-if="activeTab == 'earth'"/>
+        </el-tab-pane>
+        <el-tab-pane label="地面" lazy name="ground">
+          <GroundMod v-if="activeTab == 'ground'"/>
+        </el-tab-pane>
+      </el-tabs>
+    </el-main>
+  </el-container>
 </template>
 
-<script setup lang="ts">
+<script lang="ts" setup>
 import {ref} from 'vue'
 import type {TabsInstance} from 'element-plus'
 import PointsMod from '~/components/example/mod/PointsMod.vue'
 import LineMod from '~/components/example/mod/LineMod.vue'
 import FaceMod from "~/components/example/mod/FaceMod.vue";
 import QuadMod from "@/components/example/mod/QuadMod.vue";
+import AxesMod from "@/components/example/mod/AxesMod.vue";
+import EarthMod from "@/components/example/mod/EarthMod.vue";
+import GroundMod from '~/components/example/mod/GroundMod.vue';
 
 
 const tabPosition = ref<TabsInstance['tabPosition']>('left')
@@ -37,33 +49,33 @@ const lineModRef = ref<InstanceType<typeof LineMod>>()
 
 <style scoped>
 .el-container {
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
 }
 
 .el-main {
-    padding: 0 !important;
-    overflow: hidden;
-    height: 100%;
+  padding: 0 !important;
+  overflow: hidden;
+  height: 100%;
 }
 
 /* 新增的样式 */
 .full-height-tabs {
-    height: 100%;
+  height: 100%;
 }
 
 :deep(.el-tabs__content) {
-    flex: 1;
-    overflow: hidden;
+  flex: 1;
+  overflow: hidden;
 }
 
 :deep(.el-tab-pane) {
-    height: 100%;
+  height: 100%;
 }
 
 :deep(.el-tabs--left .el-tabs__content),
 :deep(.el-tabs--right .el-tabs__content) {
-    height: 100%;
+  height: 100%;
 }
 </style>
