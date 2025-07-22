@@ -23,6 +23,9 @@
         <el-tab-pane label="地面" lazy name="ground">
           <GroundMod v-if="activeTab == 'ground'"/>
         </el-tab-pane>
+        <el-tab-pane label="鸭子测试" lazy name="duck">
+          <DuckTestMod v-if="activeTab == 'duck'"/>
+        </el-tab-pane>
       </el-tabs>
     </el-main>
   </el-container>
@@ -38,6 +41,7 @@ import QuadMod from "@/components/example/mod/QuadMod.vue";
 import AxesMod from "@/components/example/mod/AxesMod.vue";
 import EarthMod from "@/components/example/mod/EarthMod.vue";
 import GroundMod from '~/components/example/mod/GroundMod.vue';
+import DuckTestMod from '~/components/example/mod/DuckTestMod.vue';
 
 
 const tabPosition = ref<TabsInstance['tabPosition']>('left')
