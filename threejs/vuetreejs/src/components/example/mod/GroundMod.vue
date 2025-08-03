@@ -7,6 +7,7 @@
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
 import {THREE, OrbitControls, Stats} from '~/utils/three-modules'
 import mesh from '~/models/ground'
+import {Acura_01} from '@/models/car/Acura'
 import {debounce} from "lodash-es";
 
 // three.js 容器 DOM 引用
@@ -17,6 +18,10 @@ const scene = new THREE.Scene() // 创建场景
 let controls: OrbitControls | null = null // 轨道控制器
 
 scene.add(mesh) // 添加模型点云
+
+const acura = new Acura_01()// 创建 Acura 车辆模型
+acura.scale(50)
+acura.stowage(scene)
 
 const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 3000) // 透视相机
 const renderer = new THREE.WebGLRenderer({

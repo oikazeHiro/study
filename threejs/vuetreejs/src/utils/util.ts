@@ -8,4 +8,9 @@ const rgbToHex = (r: number, g: number, b: number): string => {
   return `0x${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
 }
 
-export { rgbToHex };
+// 获取静态资源的完整 URL
+const getStaticUrl = (url: string): string => {
+    return new URL(url, import.meta.url).href;
+}
+
+export { rgbToHex, getStaticUrl };

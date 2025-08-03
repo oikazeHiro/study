@@ -13,7 +13,7 @@ export {
     OrbitControls,
     GLTFLoader,
     EffectComposer,
-    Stats
+    Stats,
     // 其他导出的模块...
 };
 
@@ -27,6 +27,9 @@ export type {
     AxesHelper,
     Color,
     ColorRepresentation,
+    Object3D,
+    Vector3,
+    Group,
 } from 'three';
 
 export type {
