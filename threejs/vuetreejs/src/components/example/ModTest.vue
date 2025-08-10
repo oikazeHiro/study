@@ -26,6 +26,15 @@
         <el-tab-pane label="鸭子测试" lazy name="duck">
           <DuckTestMod v-if="activeTab == 'duck'"/>
         </el-tab-pane>
+        <el-tab-pane label="射线测试" lazy name="raycaster">
+          <RaycasterTest v-if="activeTab == 'raycaster'"/>
+        </el-tab-pane>
+        <el-tab-pane label="物理测试" lazy name="cannon">
+          <CannonTest v-if="activeTab == 'cannon'"/>
+        </el-tab-pane>
+        <el-tab-pane label="物理测试2" lazy name="cannon2">
+          <CannonTestTwo v-if="activeTab == 'cannon2'"/>
+        </el-tab-pane>
       </el-tabs>
     </el-main>
   </el-container>
@@ -37,11 +46,14 @@ import type {TabsInstance} from 'element-plus'
 import PointsMod from '~/components/example/mod/PointsMod.vue'
 import LineMod from '~/components/example/mod/LineMod.vue'
 import FaceMod from "~/components/example/mod/FaceMod.vue";
-import QuadMod from "@/components/example/mod/QuadMod.vue";
-import AxesMod from "@/components/example/mod/AxesMod.vue";
-import EarthMod from "@/components/example/mod/EarthMod.vue";
+import QuadMod from "~/components/example/mod/QuadMod.vue";
+import AxesMod from "~/components/example/mod/AxesMod.vue";
+import EarthMod from "~/components/example/mod/EarthMod.vue";
 import GroundMod from '~/components/example/mod/GroundMod.vue';
 import DuckTestMod from '~/components/example/mod/DuckTestMod.vue';
+import RaycasterTest from '~/components/example/mod/RaycasterTest.vue';
+import CannonTest from '~/components/example/mod/CannonTest.vue';
+import CannonTestTwo from '~/components/example/mod/CannonTestTwo.vue';
 
 
 const tabPosition = ref<TabsInstance['tabPosition']>('left')

@@ -10,6 +10,12 @@ const rgbToHex = (r: number, g: number, b: number): string => {
 
 // 获取静态资源的完整 URL
 const getStaticUrl = (url: string): string => {
+    // 处理 ~/ 开头的路径
+    if (url.startsWith('~/')) {
+        return new URL(url.replace('~/', '/src/'), import.meta.url).href;
+    }
+
+    // 处理其他路径
     return new URL(url, import.meta.url).href;
 }
 

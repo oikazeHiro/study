@@ -30,7 +30,7 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
 // 设置 |平行光位置
 directionalLight.position.set(300, 300, 300)
 scene.add(new THREE.AxesHelper(200)) // 坐标轴辅助器
-
+scene.add(directionalLight)
 // 处理窗口尺寸变化
 const handleResize = async () => {
   await nextTick()

@@ -8,7 +8,7 @@
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref } from 'vue'
-import { OrbitControls, Stats, THREE, dat, MyAxis, ColorRepresentation } from '~/utils/three-modules'
+import { OrbitControls, Stats, THREE, dat, ColorRepresentation } from '~/utils/three-modules'
 import { debounce } from "lodash-es";
 // DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)
@@ -27,7 +27,14 @@ const clock = new THREE.Clock()
 
 const gui = new dat.GUI()
 const mod = gui.addFolder('模型控制')
-const myAxis = new MyAxis()
+const myAxis = {
+  xStep: 0.01,
+  yStep: 0.01,
+  zStep: 0.01,
+  isXRotary: true,
+  isYRotary: true,
+  isZRotary: true
+}
 mod.add(myAxis, 'xStep', 0.01, 1).name('X轴旋转步进').step(myAxis.xStep)
 mod.add(myAxis, 'yStep', 0.01, 1).name('Y轴旋转步进').step(myAxis.yStep)
 mod.add(myAxis, 'zStep', 0.01, 1).name('Z轴旋转步进').step(myAxis.zStep)
