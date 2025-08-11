@@ -1,4 +1,4 @@
-import {THREE} from '~/utils/three-modules'
+import {THREE} from '@/utils/threeModules'
 
 // 创建一个缓冲几何体
 const geometry = new THREE.BufferGeometry();

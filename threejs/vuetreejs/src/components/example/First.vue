@@ -9,7 +9,7 @@
 <script lang="ts" setup>
 import {onMounted, onUnmounted, ref} from 'vue'
 import {debounce} from 'lodash-es'
-import {OrbitControls, Stats, THREE} from '~/utils/three-modules'
+import {OrbitControls, Stats, THREE} from '@/utils/threeModules'
 
 // DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)

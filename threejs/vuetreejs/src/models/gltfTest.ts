@@ -1,4 +1,4 @@
-import {THREE,GLTFLoader} from '~/utils/three-modules'
+import {THREE,GLTFLoader} from '@/utils/threeModules'
 
 const gltfLoader = new GLTFLoader();
 const href = new URL("@/blender/duck/鸭子.gltf", import.meta.url).href;

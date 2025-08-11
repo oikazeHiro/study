@@ -1,4 +1,4 @@
-import {Vector3,THREE,Color} from '@/utils/three-modules'
+import {Vector3,THREE,Color} from '@/utils/threeModules'
 
 export class Car {
     id: string;

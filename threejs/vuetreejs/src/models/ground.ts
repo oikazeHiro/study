@@ -1,4 +1,4 @@
-import {THREE} from '~/utils/three-modules'
+import {THREE} from '@/utils/threeModules'
 
 const loader = new THREE.TextureLoader();
 const href = new URL("@/assets/地砖.jpg", import.meta.url).href;

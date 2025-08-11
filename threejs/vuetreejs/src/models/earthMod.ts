@@ -1,4 +1,4 @@
-import {THREE} from '~/utils/three-modules'
+import {THREE} from '@/utils/threeModules'
 
 const geometry = new THREE.SphereGeometry(50);
 const group = new THREE.Group();

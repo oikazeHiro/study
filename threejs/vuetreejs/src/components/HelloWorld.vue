@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router';
-import {Stats, THREE} from "@/utils/three-modules";
+import {Stats, THREE} from "@/utils/threeModules";
 
 const router = useRouter();
 const routes = ref(router.getRoutes());

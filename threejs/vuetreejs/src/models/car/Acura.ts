@@ -1,5 +1,5 @@
 import {Car, Shell} from './Car'
-import {Color, GLTFLoader, Group, Object3D, THREE} from '@/utils/three-modules'
+import {Color, GLTFLoader, Group, Object3D, THREE} from '@/utils/threeModules'
 
 export class Acura_01 extends Car {
 

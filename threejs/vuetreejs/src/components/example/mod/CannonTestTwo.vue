@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
-import {THREE, OrbitControls, Stats, CANNON, vector3ToVec3} from '~/utils/three-modules'
+import {THREE, OrbitControls, Stats, CANNON, vector3ToVec3} from '@/utils/threeModules'
 import {debounce} from "lodash-es";
 import {getStaticUrl} from '~/utils/util'
 

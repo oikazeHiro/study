@@ -5,7 +5,7 @@
 
 <script setup lang="ts">
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
-import {THREE, OrbitControls, Stats} from '~/utils/three-modules'
+import {THREE, OrbitControls, Stats} from '@/utils/threeModules'
 import mesh from '~/models/earthMod'
 import {debounce} from "lodash-es";
 

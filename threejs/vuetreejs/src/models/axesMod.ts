@@ -1,4 +1,4 @@
-import {THREE} from '~/utils/three-modules'
+import {THREE} from '@/utils/threeModules'
 
 const geometry = new THREE.BoxGeometry(20,20,20);
 const material = new THREE.MeshLambertMaterial({color: 0x00ff00});
