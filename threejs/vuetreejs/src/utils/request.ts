@@ -15,7 +15,7 @@ const service: AxiosInstance = axios.create({
 
 // 请求拦截器
 service.interceptors.request.use(
-    (config: RequestOptions) => {
+    (config: any) => {
         // 在发送请求之前做些什么
         if (config.showLoading){
             showLoading();
@@ -35,7 +35,7 @@ service.interceptors.request.use(
 
 // 响应拦截器
 service.interceptors.response.use(
-    (response: AxiosResponse) => {
+    (response: any) => {
         // 对响应数据做点什么
         const config = response.config as RequestOptions;
         if (config.showLoading) {
