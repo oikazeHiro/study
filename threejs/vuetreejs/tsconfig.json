@@ -8,12 +8,17 @@
       "~/*": ["src/*"],
       "three/examples/jsm/*": ["node_modules/three/examples/jsm/*"]
     },
-    "types": ["vite/client"] // 添加 Vite 类型
+    "types": ["vite/client"], // 添加 Vite 类型
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.vue",
-    "vite.config.ts" // 包含配置文件
+    "vite.config.ts", // 包含配置文件
+    "src",
+    "types"
   ]
 }

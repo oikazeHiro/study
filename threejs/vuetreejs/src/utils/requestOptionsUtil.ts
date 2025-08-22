@@ -1,4 +1,4 @@
-import {RequestOptions} from "~/types/request"
+import {RequestOptions} from "@/otherType/request"
 import {AxiosHeaders} from "axios";
 
 export const RequestOptionsAll: RequestOptions = {

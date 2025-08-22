@@ -1,4 +1,4 @@
-// src/types/request.ts
+// src/otherType/request.ts
 import {InternalAxiosRequestConfig} from "axios";
 
 export interface ResponseData<T = any> {

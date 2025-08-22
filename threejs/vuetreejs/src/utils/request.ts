@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios'
 // src/utils/request.ts
-import { type ResponseData, type RequestOptions } from '~/types/request'
+import { type ResponseData, type RequestOptions } from '@/otherType/request'
 import { showLoading, hideLoading } from './loading';
 import { showErrorModal } from './errorHandler';
 

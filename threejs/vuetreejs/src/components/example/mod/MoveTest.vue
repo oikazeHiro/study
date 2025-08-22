@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
-import {THREE, OrbitControls, Stats} from '@/utils/threeModules'
+import {THREE, OrbitControls, Stats,Ammo} from '@/utils/threeModules'
 import {debounce} from "lodash-es";
 
 // three.js 容器 DOM 引用
@@ -20,6 +20,7 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // 环境光
 scene.add(ambientLight)
 scene.add(new THREE.AxesHelper(15)) // 坐标轴辅助器
 scene.add(new THREE.GridHelper( 30, 30 ))
+// const btCollisionDispatcher = new Ammo.btCollisionDispatcher();
 
 
 // 创建一个柱体
