@@ -6,9 +6,10 @@
 
 <script setup lang="ts">
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
-import {THREE, OrbitControls, Stats, CANNON, vector3ToVec3} from '@/utils/threeModules'
+import {THREE, OrbitControls, Stats, CANNON, vector3ToVec3,Water,Sky,WebGLRenderTarget} from '@/utils/threeModules'
 import {debounce} from "lodash-es";
 import {getStaticUrl} from '~/utils/util'
+
 
 // three.js 容器 DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)
@@ -20,23 +21,86 @@ const renderer = new THREE.WebGLRenderer({
 const scene = new THREE.Scene() // 创建场景
 const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000) // 透视相机
 
-const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // 环境光
-scene.add(ambientLight)
-//添加平行光
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
-// 设置 |平行光位置
-directionalLight.position.set(5, 5, -5)
-// 创建平行光辅助器
-const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 2);
-scene.add(directionalLight) // 添加平行光
-scene.add(directionalLightHelper) // 添加平行光辅助器
+// const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // 环境光
+// scene.add(ambientLight)
+// //添加平行光
+// const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
+// // 设置 |平行光位置
+// directionalLight.position.set(5, 5, -5)
+// // 创建平行光辅助器
+// const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 2);
+// scene.add(directionalLight) // 添加平行光
+// scene.add(directionalLightHelper) // 添加平行光辅助器
 
 // 创建地面
-const groundGeometry = new THREE.PlaneGeometry(10, 10)
-const groundMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00}) // 绿色地面
-const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-ground.rotation.x = -Math.PI / 2 // 旋转平面，使其水平
-scene.add(ground)
+const waterGeometry = new THREE.PlaneGeometry( 10000, 10000 )
+// const groundMaterial = new THREE.MeshBasicMaterial({color: 0x00ff00}) // 绿色地面
+let url = getStaticUrl("~/assets/waternormals.jpg");
+let waterNormals = new THREE.TextureLoader().load( url, function (texture ) {
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+} );
+console.log("waterNormals",waterNormals)
+const water = new Water(
+    waterGeometry,
+    {
+      textureWidth: 512,
+      textureHeight: 512,
+      waterNormals: waterNormals,
+      sunDirection: new THREE.Vector3(),
+      sunColor: 0xffffff,
+      waterColor: 0x001e0f,
+      distortionScale: 3.7,
+      fog: scene.fog !== undefined
+    }
+);
+// const ground = new THREE.Mesh(waterGeometry, groundMaterial)
+water.rotation.x = -Math.PI / 2 // 旋转平面，使其水平
+scene.add(water)
+
+let sun = new THREE.Vector3();
+const sky = new Sky();
+sky.scale.setScalar( 10000 );
+scene.add( sky );
+
+const skyUniforms = sky.material.uniforms;
+
+skyUniforms[ 'turbidity' ].value = 10;
+skyUniforms[ 'rayleigh' ].value = 2;
+skyUniforms[ 'mieCoefficient' ].value = 0.005;
+skyUniforms[ 'mieDirectionalG' ].value = 0.8;
+
+const parameters = {
+  elevation: 2,
+  azimuth: 180
+};
+
+const pmremGenerator = new THREE.PMREMGenerator( renderer );
+const sceneEnv = new THREE.Scene();
+
+let renderTarget:WebGLRenderTarget;
+
+function updateSun() {
+
+  const phi = THREE.MathUtils.degToRad( 90 - parameters.elevation );
+  const theta = THREE.MathUtils.degToRad( parameters.azimuth );
+
+  sun.setFromSphericalCoords( 1, phi, theta );
+
+  sky.material.uniforms[ 'sunPosition' ].value.copy( sun );
+  water.material.uniforms[ 'sunDirection' ].value.copy( sun ).normalize();
+
+  if ( renderTarget !== undefined ) renderTarget.dispose();
+
+  sceneEnv.add( sky );
+  renderTarget = pmremGenerator.fromScene( sceneEnv );
+  scene.add( sky );
+
+  scene.environment = renderTarget.texture;
+
+}
+
+updateSun();
+
 
 // 创建物理世界
 const world = new CANNON.World()
@@ -63,7 +127,7 @@ const groundBody = new CANNON.Body({
   mass: 0, // 地面质量为 0，表示静止不动
   shape: new CANNON.Plane(),
   material: groundMaterialCannon, // 使用地面物理材料
-  position: vector3ToVec3(ground.position) // 初始位置
+  position: vector3ToVec3(water.position) // 初始位置
 })
 groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0) // 旋转平面，使其水平
 world.addBody(groundBody)
@@ -148,6 +212,7 @@ const animate = () => {
   // 更新 stats 面板
   stats.update()
   controls?.update()
+  water.material.uniforms[ 'time' ].value += 1.0 / 60.0;
   renderer.render(scene, camera)
 }
 
@@ -203,6 +268,7 @@ const handleResize = async () => {
   camera.updateProjectionMatrix()
   renderer.setSize(width, height)
 }
+
 
 let meshes = [] // 存储所有球体 Mesh
 const raycaster = new THREE.Raycaster();

@@ -4,6 +4,9 @@ import * as dat from 'dat.gui';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import { Water } from 'three/addons/objects/Water.js';
+import { Sky } from 'three/addons/objects/Sky.js';
+import Ammo from "ammo.js";
 import Stats from 'three/addons/libs/stats.module.js'
 import * as CANNON from 'cannon';
 import type {Vec3} from 'cannon';
@@ -18,6 +21,9 @@ export {
     Stats,
     CANNON,
     // 其他导出的模块...
+    Water,
+    Sky,
+    Ammo,
 };
 
 export type {
@@ -33,6 +39,7 @@ export type {
     Object3D,
     Vector3,
     Group,
+    WebGLRenderTarget,
 } from 'three';
 
 export type {
