@@ -1,11 +1,11 @@
 {
-  "name": "vuetreejs",
+  "name": "vuethreejs",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "dev": "vite --mode development",
+    "build": "vue-tsc -b && vite build --mode production",
     "preview": "vite preview"
   },
   "dependencies": {

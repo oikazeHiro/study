@@ -6,7 +6,7 @@ import { showErrorModal } from './errorHandler';
 
 // 创建 axios 实例
 const service: AxiosInstance = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL, // 从环境变量获取基础URL
+    baseURL: import.meta.env.VITE_BASE_URL, // 从环境变量获取基础URL
     timeout: 10000, // 请求超时时间
     headers: {
         'Content-Type': 'application/json;charset=UTF-8'
