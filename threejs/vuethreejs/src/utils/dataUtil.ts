@@ -21,6 +21,12 @@ const routerData = [
         component: () => import('@/components/example/mod/MoveTest.vue'),
         name: '模型移动测试',
     },
+    {
+        path: 'zzj',
+        component: () => import('@/components/example/mod/ZhuangZaiJiTest.vue'),
+        name: '铲车',
+    },
 ];
+
 
 export {routerData};

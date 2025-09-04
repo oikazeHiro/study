@@ -40,6 +40,8 @@ export type {
     Vector3,
     Group,
     WebGLRenderTarget,
+    AnimationClip,
+    AnimationMixer,
 } from 'three';
 
 export type {
