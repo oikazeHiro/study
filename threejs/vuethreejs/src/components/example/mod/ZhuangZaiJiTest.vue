@@ -112,6 +112,7 @@ const gltfLoader = new GLTFLoader();
 const url = getStaticUrl('~/blender/ship/zhuangZaiJi.glb');
 gltfLoader.load(url, (gltf) => {
   console.log(gltf)
+  gltf.scene.position.y = 1
   scene.add(gltf.scene);
   initAnimations(gltf);
 });
@@ -126,7 +127,7 @@ const createPanel = () => {
 // 初始化场景
 const initScene = () => {
   // 添加 |环境光
-  const ambientLight = new THREE.AmbientLight(0x404040, 1.0);
+  const ambientLight = new THREE.AmbientLight(0x404040, 10.0);
   scene.add(ambientLight);
 
   const light = gui.addFolder('光源控制')
