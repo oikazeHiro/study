@@ -38,6 +38,9 @@
 <!--        <el-tab-pane label="移动测试" lazy name="move">-->
 <!--          <MoveTest v-if="activeTab == 'move'"/>-->
 <!--        </el-tab-pane>-->
+        <el-tab-pane label="船测试" lazy name="ship">
+          <ShipTestMod v-if="activeTab == 'ship'"/>
+        </el-tab-pane>
       </el-tabs>
     </el-main>
   </el-container>
@@ -57,6 +60,7 @@ import DuckTestMod from '~/components/example/mod/DuckTestMod.vue';
 import RaycasterTest from '~/components/example/mod/RaycasterTest.vue';
 import CannonTest from '~/components/example/mod/CannonTest.vue';
 import CannonTestTwo from '~/components/example/mod/CannonTestTwo.vue';
+import ShipTestMod  from "~/components/example/mod/ShipTestMod.vue";
 import MoveTest from '~/components/example/mod/MoveTest.vue';
 
 
