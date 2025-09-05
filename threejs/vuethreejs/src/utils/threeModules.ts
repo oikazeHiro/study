@@ -8,6 +8,8 @@ import { Water } from 'three/addons/objects/Water.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import Ammo from "ammo.js";
 import Stats from 'three/addons/libs/stats.module.js'
+import { pass, uniform, time, oscSine } from 'three/tsl';
+import { outline } from 'three/addons/tsl/display/OutlineNode.js';
 import * as CANNON from 'cannon';
 import type {Vec3} from 'cannon';
 // 其他需要的模块...
@@ -24,6 +26,11 @@ export {
     Water,
     Sky,
     Ammo,
+    pass,
+    uniform,
+    time,
+    oscSine,
+    outline,
 };
 
 export type {
@@ -42,6 +49,7 @@ export type {
     WebGLRenderTarget,
     AnimationClip,
     AnimationMixer,
+    Material,
 } from 'three';
 
 export type {
