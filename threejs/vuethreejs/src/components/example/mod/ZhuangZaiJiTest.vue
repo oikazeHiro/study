@@ -8,7 +8,7 @@
 
 <script lang="ts" setup>
 import {onMounted, onUnmounted, ref} from 'vue'
-import {AnimationClip, AnimationMixer, dat, GLTFLoader, OrbitControls, Stats, THREE} from '@/utils/threeModules'
+import {Group, AnimationMixer, dat, GLTFLoader, OrbitControls, Stats, THREE} from '@/utils/threeModules'
 import {debounce} from "lodash-es";
 import {getStaticUrl} from "@/utils/util";
 
@@ -45,13 +45,13 @@ const settings = {
   'down': () => {
     prepareCrossFade(downAction);
   },
-  'use default duration': true,
-  'set custom duration': 3.5,
+  'color': '#000000'
 }
 
 let singleStepMode = false;
 const crossFadeControls: any[] = [];
 const animationControl = gui.addFolder('动作控制');
+const colorControl = gui.addFolder('货物颜色');
 
 // 创建 |控制器
 const stats = new Stats()
@@ -59,7 +59,7 @@ const stats = new Stats()
 let controls: OrbitControls | null = null
 // 动画帧ID
 let animationFrameId: number = 0
-
+let zzj:Group;
 // 准备动画过渡
 const prepareCrossFade = (targetAction: THREE.AnimationAction, duration: number = 0.5) => {
   if (activeAction === targetAction) return;
@@ -108,12 +108,13 @@ const initAnimations = (gltf: any) => {
   createPanel();
 }
 
-const gltfLoader = new GLTFLoader();
+const loader = new GLTFLoader();
 const url = getStaticUrl('~/blender/ship/zhuangZaiJi.glb');
-gltfLoader.load(url, (gltf) => {
+loader.load(url, (gltf) => {
   console.log(gltf)
   gltf.scene.position.y = 1
-  scene.add(gltf.scene);
+  zzj = gltf.scene;
+  scene.add(zzj);
   initAnimations(gltf);
 });
 
@@ -122,6 +123,21 @@ const createPanel = () => {
   crossFadeControls.push(animationControl.add(settings, 'up').name('上升'));
   crossFadeControls.push(animationControl.add(settings, 'down').name('下降'));
   animationControl.open()
+  colorControl.addColor(settings, 'color').name('货物颜色').onChange((color: string) => {
+    if (zzj){
+      const objectByName = zzj.getObjectByName("货物") as THREE.Mesh;
+      if (objectByName && objectByName.material) {
+        // 处理材质数组或单个材质的情况
+        const materials = Array.isArray(objectByName.material) ? objectByName.material : [objectByName.material];
+        materials.forEach(material => {
+          // 检查材质是否有color属性（例如MeshStandardMaterial）
+          if ('color' in material && material.color) {
+            (material.color as THREE.Color).set(color);
+          }
+        });
+      }
+    }
+  })
 }
 
 // 初始化场景

@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import * as dat from 'dat.gui';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import { Water } from 'three/addons/objects/Water.js';
 import { Sky } from 'three/addons/objects/Sky.js';
@@ -19,6 +20,7 @@ export {
     dat,
     OrbitControls,
     GLTFLoader,
+    FBXLoader,
     EffectComposer,
     Stats,
     CANNON,
