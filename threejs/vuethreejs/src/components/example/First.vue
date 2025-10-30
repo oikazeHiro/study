@@ -9,7 +9,9 @@
 <script lang="ts" setup>
 import {onMounted, onUnmounted, ref} from 'vue'
 import {debounce} from 'lodash-es'
-import {OrbitControls, Stats, THREE} from '@/utils/threeModules'
+import {Earcut, OrbitControls, Stats, THREE} from '@/utils/threeModules'
+import IrregularShape from "@/models/IrregularShape";
+import {getStaticUrl} from "@/utils/util";
 
 // DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)
@@ -27,26 +29,61 @@ const stats = new Stats()
 const cubes: Array<THREE.Mesh<THREE.BoxGeometry, THREE.MeshLambertMaterial>> = []
 let controls: OrbitControls | null = null
 let animationFrameId: number = 0
-
+let baseShape: Array<any>, topHeights: Array<number>;
 // 初始化场景
 const initScene = () => {
+  // 添加辅助网格
+  const gridHelper = new THREE.GridHelper(20, 20, 0xe2e8f0, 0xf1f5f9);
+  scene.add(gridHelper);
 
-  // 立方体
-  const geometry = new THREE.BoxGeometry(1, 1, 1)
-  const material = new THREE.MeshLambertMaterial({
-    color: 0x00ff00,
-    transparent: true,
-    opacity: 0.9
-  })
-
-  for (let i = 0; i < 10; i++) {
-    for (let j = 0; j < 10; j++) {
-      const cube = new THREE.Mesh(geometry, material)
-      cube.position.set(i * 2, 0, j * 2)
-      cubes.push(cube)
-      scene.add(cube)
-    }
+  // 定义底座形状（不规则五边形）
+  baseShape = [
+    {x: 0, y: 0},    // 顶点0
+    {x: 4, y: 0},    // 顶点1
+    {x: 5, y: 3},    // 顶点2
+    {x: 2, y: 5},    // 顶点3
+    {x: -1, y: 2}    // 顶点4
+  ];
+  // 初始上部高度
+  // topHeights = [1.2, 3.5, 2.1, 4.3, 1.8];
+  topHeights = [0.1, 0.1, 0.1, 0.1, 0.1];
+  // createIrregularModel()
+  const data = {
+    id: '10086',
+    name: 'irregularModel',
+    baseShape: baseShape,
+    topHeights: topHeights
   }
+  const irregularShape = new IrregularShape(scene, data)
+
+  // 动态设置高度贴图
+  const textureLoader = new THREE.TextureLoader();
+  // textureLoader.load(getStaticUrl('~/blender/test.jpg'), (heightMap) => {
+  //   irregularShape.setHeightMap(heightMap, 0.5).recreateModel();
+  // });
+
+  const data2 = {
+    id: '10087',
+    name: 'irregularModel2',
+    baseShape:[
+      {x:0,y:0},
+      {x:-10,y:-5},
+      {x:-18,y:2},
+      {x:-15,y:4},
+      {x:-10,y:0},
+      {x:-2,y:2},
+    ],
+    topHeights: [0.5, 0.5, 0.5, 0.5,0.5, 0.5]
+  }
+  const irregularShape2 = new IrregularShape(scene, data2)
+  textureLoader.load(getStaticUrl('~/blender/Rock058_1K-JPG_Displacement.jpg'), (heightMap) => {
+    irregularShape2.setHeightMap(heightMap, 2).recreateModel();
+  });
+  textureLoader.load(getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'), (colorMap) => {
+    irregularShape2.setColorMap(colorMap).recreateModel();
+  });
+
+
 
   // 光源
   scene.add(new THREE.AmbientLight(0x404040))
@@ -56,6 +93,92 @@ const initScene = () => {
 
   // 辅助工具
   scene.add(new THREE.AxesHelper(2))
+}
+
+const createIrregularModel = () => {
+  const baseZ = 0; // 底座Z坐标（确保平整）
+  const vertices = [];
+  // 先添加底座顶点（z=baseZ）
+  baseShape.forEach(p => {
+    vertices.push(p.x, p.y, baseZ);
+  });
+  // 再添加上部顶点（z=baseZ + height）
+  baseShape.forEach((p, i) => {
+    vertices.push(p.x, p.y, baseZ + topHeights[i]);
+  });
+  const vertexCount = baseShape.length; // 底座顶点数量
+  // 定义三角形索引（面）
+  const indices = [];
+  // 底座三角化（用EarCut处理多边形）
+  const baseCoords = [];
+  baseShape.forEach(p => {
+    baseCoords.push(p.x, p.y);
+  });
+  const baseTriangles = Earcut.triangulate(baseCoords);
+  baseTriangles.forEach(idx => indices.push(idx));
+
+  // 顶部三角化
+  const topTriangles = [...baseTriangles];
+  topTriangles.forEach(idx => indices.push(idx + vertexCount));
+  // 侧面三角化
+  for (let i = 0; i < vertexCount; i++) {
+    const j = (i + 1) % vertexCount; // 下一个顶点（循环）
+    // 侧面四边形拆分为两个三角形
+    indices.push(
+        i, j, j + vertexCount,    // 第一个三角形
+        i, j + vertexCount, i + vertexCount // 第二个三角形
+    );
+  }
+  // 创建几何体
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(new THREE.Uint32BufferAttribute(indices, 1));
+  geometry.computeVertexNormals(); // 计算法向量用于光照
+  // 创建材质和网格
+  const material = new THREE.MeshStandardMaterial({
+    color: 0x4F46E5,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.9,
+    metalness: 0.1,
+    roughness: 0.7,
+    wireframe: true  // 改为 true 显示线框
+  });
+
+  // 创建底座特殊材质 - 同样改为线框模式
+  const baseMaterial = new THREE.MeshStandardMaterial({
+    color: 0x10B981,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.95,
+    metalness: 0.2,
+    roughness: 0.5,
+    wireframe: true  // 改为 true 显示线框
+  });
+
+  // 创建底座网格
+  const baseGeometry = new THREE.BufferGeometry();
+  const baseVertices = [];
+  baseShape.forEach(p => {
+    baseVertices.push(p.x, p.y, baseZ - 0.05); // 稍微低于原底座，避免z-fighting
+  });
+  baseGeometry.setAttribute('position', new THREE.Float32BufferAttribute(baseVertices, 3));
+  baseGeometry.setIndex(new THREE.Uint32BufferAttribute(baseTriangles, 1));
+  baseGeometry.computeVertexNormals();
+
+  const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+  baseMesh.receiveShadow = true;
+
+  // 创建上部网格
+  const irregularMesh = new THREE.Mesh(geometry, material);
+  irregularMesh.castShadow = true;
+  irregularMesh.receiveShadow = true;
+
+  // 创建组合对象
+  const group = new THREE.Group();
+  group.add(baseMesh);
+  group.add(irregularMesh);
+  scene.add(group);
 }
 
 // 处理窗口大小变化

@@ -13,6 +13,7 @@ import { pass, uniform, time, oscSine } from 'three/tsl';
 import { outline } from 'three/addons/tsl/display/OutlineNode.js';
 import * as CANNON from 'cannon';
 import type {Vec3} from 'cannon';
+import { Earcut } from 'three/src/extras/Earcut';
 // 其他需要的模块...
 
 export {
@@ -33,6 +34,7 @@ export {
     time,
     oscSine,
     outline,
+    Earcut,
 };
 
 export type {
@@ -93,3 +95,19 @@ export const cameraDirectionManual = (origin: THREE.Vector3, coordinate: THREE.V
         sub.z / sum
     );
 }
+
+export class UpdateParams{
+    position: THREE.Vector3;
+    rotation: THREE.Euler;
+    scale: THREE.Vector3;
+    visible: boolean;
+    animationName: string;
+    constructor(position: THREE.Vector3, rotation: THREE.Euler, scale: THREE.Vector3, visible: boolean, animationName: string) {
+        this.position = position;
+        this.rotation = rotation;
+        this.scale = scale;
+        this.visible = visible;
+        this.animationName = animationName;
+    }
+}
+
