@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [vue()],
     server: {
+      port: 3000, // 设置端口为3000
+      host: '0.0.0.0', // 允许外部访问
       proxy: {
         '/api': {
           target: env.VITE_API_URL,

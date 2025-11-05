@@ -49,11 +49,18 @@ export type {
     ColorRepresentation,
     Object3D,
     Vector3,
+    Vector2,
     Group,
     WebGLRenderTarget,
     AnimationClip,
     AnimationMixer,
     Material,
+    BufferGeometry,
+    BufferAttribute,
+    SphereGeometry,
+    MeshStandardMaterial,
+    Texture,
+    TextureLoader,
 } from 'three';
 
 export type {
