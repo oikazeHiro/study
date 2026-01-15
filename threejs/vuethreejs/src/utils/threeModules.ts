@@ -173,6 +173,10 @@ export interface CurvedBarParams {
     receiveShadow?: boolean;
 }
 
+/**
+ *
+ * @param data
+ */
 export const modDataToCurvedBarParams = (data: any): CurvedBarParams => {
     const nodes = new Array<Node>()
     if (data.nodes) {
@@ -203,3 +207,27 @@ export const modDataToCurvedBarParams = (data: any): CurvedBarParams => {
         receiveShadow: data.receiveShadow,
     }
 }
+/**
+ * 将任意数据转为 THREE.Vector3
+ * @param data
+ */
+export const anyDataToVector3 = (data: any): THREE.Vector3 => {
+    if (data instanceof THREE.Vector3) {
+        return data
+    } else {
+        return new THREE.Vector3(data.x, data.y, data.z)
+    }
+}
+/**
+ * 将任意数据转为 THREE.Euler
+ * @param data
+ */
+export const anyDataToEuler = (data: any): THREE.Euler => {
+    if (data instanceof THREE.Euler) {
+        return data
+    } else {
+        return new THREE.Euler(data.x, data.y, data.z, data.order)
+    }
+}
+
+
