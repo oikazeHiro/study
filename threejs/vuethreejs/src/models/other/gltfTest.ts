@@ -1,0 +1,12 @@
+import {THREE,GLTFLoader} from '@/utils/threeModules'
+
+const gltfLoader = new GLTFLoader();
+const href = new URL("@/blender/duck/鸭子.gltf", import.meta.url).href;
+
+const group = new THREE.Group();
+gltfLoader.load(href, (gltf) => {
+    console.log(`加载模型: ${href}`);
+    group.add(gltf.scene);
+});
+
+export default group;

@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import {nextTick, onMounted, onUnmounted, ref} from 'vue'
 import {THREE, OrbitControls, Stats} from '@/utils/threeModules'
-import quad from '~/models/rectangleMod'
+import quad from '@/models/other/rectangleMod'
 import {debounce} from "lodash-es";
 
 // three.js 容器 DOM 引用

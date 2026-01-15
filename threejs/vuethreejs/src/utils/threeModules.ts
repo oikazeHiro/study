@@ -4,26 +4,38 @@ import * as dat from 'dat.gui';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
+import {OBJLoader} from "three/addons/loaders/OBJLoader.js";
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
-import { Water } from 'three/addons/objects/Water.js';
-import { Sky } from 'three/addons/objects/Sky.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutlinePass} from 'three/addons/postprocessing/OutlinePass.js';
+import {Water} from 'three/addons/objects/Water.js';
+import {Sky} from 'three/addons/objects/Sky.js';
+import {CSS2DObject, CSS2DRenderer} from 'three/addons/renderers/CSS2DRenderer.js';
 import Ammo from "ammo.js";
 import Stats from 'three/addons/libs/stats.module.js'
-import { pass, uniform, time, oscSine } from 'three/tsl';
-import { outline } from 'three/addons/tsl/display/OutlineNode.js';
-import * as CANNON from 'cannon';
+import {oscSine, pass, time, uniform} from 'three/tsl';
+import {outline} from 'three/addons/tsl/display/OutlineNode.js';
 import type {Vec3} from 'cannon';
-import { Earcut } from 'three/src/extras/Earcut';
+import * as CANNON from 'cannon';
+// examples/jsm/libs/tween.module.js"
 import * as TWEEN from "three/examples/jsm/libs/tween.module.js";
+import {Earcut} from 'three/src/extras/Earcut';
+
 // 其他需要的模块...
 
 export {
     THREE,
+    TWEEN,
     dat,
     OrbitControls,
     GLTFLoader,
     FBXLoader,
+    OBJLoader,
     EffectComposer,
+    RenderPass,
+    UnrealBloomPass,
+    OutlinePass,
     Stats,
     CANNON,
     // 其他导出的模块...
@@ -35,8 +47,9 @@ export {
     time,
     oscSine,
     outline,
+    CSS2DRenderer,
+    CSS2DObject,
     Earcut,
-    TWEEN,
 };
 
 export type {
@@ -105,12 +118,13 @@ export const cameraDirectionManual = (origin: THREE.Vector3, coordinate: THREE.V
     );
 }
 
-export class UpdateParams{
+export class UpdateParams {
     position: THREE.Vector3;
     rotation: THREE.Euler;
     scale: THREE.Vector3;
     visible: boolean;
     animationName: string;
+
     constructor(position: THREE.Vector3, rotation: THREE.Euler, scale: THREE.Vector3, visible: boolean, animationName: string) {
         this.position = position;
         this.rotation = rotation;
@@ -120,3 +134,72 @@ export class UpdateParams{
     }
 }
 
+/**
+ * 统一修正模型的前方方向
+ * @param model 要修正的 Object3D
+ * @param from  模型当前的“前方方向”（比如 -X 就写 new THREE.Vector3(-1,0,0)）
+ * @param to    想要统一的“目标前方方向”（默认是 +Z）
+ */
+export function alignModelForward(
+    model: THREE.Object3D,
+    from: THREE.Vector3 = new THREE.Vector3(-1, 0, 0),
+    to: THREE.Vector3 = new THREE.Vector3(0, 0, 1)
+) {
+    const q = new THREE.Quaternion().setFromUnitVectors(from.normalize(), to.normalize());
+    model.quaternion.premultiply(q);
+    // 更新模型矩阵
+    model.updateMatrix();
+    // 如果模型有子对象，可能也需要更新它们的矩阵
+    model.updateMatrixWorld(true);
+}
+
+export interface Node {
+    position: { x: number; y: number; z: number } | THREE.Vector3;
+    radius?: number; // 截面半径（切面大小）
+}
+
+export interface CurvedBarParams {
+    nodes?: Node[]; // 控制点（节点）
+    closed?: boolean;
+    tubularSegments?: number; // 曲线上采样段数（越大越平滑）
+    radialSegments?: number; // 截面环上顶点数
+    color?: number;
+    roughness?: number;
+    metalness?: number;
+    colorMapUrl?: string;
+    normalMapUrl?: string;
+    textureRepeat?: [number, number];
+    castShadow?: boolean;
+    receiveShadow?: boolean;
+}
+
+export const modDataToCurvedBarParams = (data: any): CurvedBarParams => {
+    const nodes = new Array<Node>()
+    if (data.nodes) {
+        for (let node of data.nodes) {
+            nodes.push({
+                position: new THREE.Vector3(node.position.x, node.position.y, node.position.z),
+                radius: node.radius
+            })
+        }
+    }
+    const textureRepeat: [number, number] = [1, 1]
+    if (data.textureRepeat && data.textureRepeat.length > 1) {
+        textureRepeat[0] = data.textureRepeat[0]
+        textureRepeat[1] = data.textureRepeat[1]
+    }
+    return {
+        nodes: nodes,
+        closed: data.closed,
+        tubularSegments: data.tubularSegments,
+        radialSegments: data.radialSegments,
+        color: data.color,
+        roughness: data.roughness,
+        metalness: data.metalness,
+        colorMapUrl: data.colorMapUrl,
+        normalMapUrl: data.normalMapUrl,
+        textureRepeat: textureRepeat,
+        castShadow: data.castShadow,
+        receiveShadow: data.receiveShadow,
+    }
+}

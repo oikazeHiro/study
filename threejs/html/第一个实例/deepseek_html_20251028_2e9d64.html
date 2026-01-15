@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three.js 路网模拟</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #f0f0f0;
+        }
+        canvas { 
+            display: block; 
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">Three.js 路网模拟 - 点击添加道路，拖动控制点修改路径</div>
+    <div id="controls">
+        <button id="addRoad">添加道路</button>
+        <button id="addIntersection">添加十字路口</button>
+        <button id="reset">重置</button>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                    "three": "../../../../threeJs/build/three.module.js",
+                    "three/addons/": "../../../../threeJs/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { TransformControls } from 'three/addons/controls/TransformControls.js';
+
+        // 场景设置
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(20, 15, 20);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        
+        // 添加光源
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(50, 50, 25);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 2048;
+        directionalLight.shadow.mapSize.height = 2048;
+        scene.add(directionalLight);
+        
+        // 创建地面
+        const groundGeometry = new THREE.PlaneGeometry(100, 100);
+        const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        ground.position.y=-1
+        // scene.add(ground);
+        
+        // 路网数据结构
+        const roadNetwork = {
+            roads: [],
+            intersections: [],
+            roadHandles: [],
+            intersectionNodes: []
+        };
+        
+        // 道路材质
+        const roadMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+        const intersectionMaterial = new THREE.MeshLambertMaterial({ color: 0x555555 });
+        
+        // 控制点材质
+        const handleGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+        const handleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+        
+        // 变换控制器
+        const transformControl = new TransformControls(camera, renderer.domElement);
+        scene.add(transformControl);
+        
+        // 添加初始道路和十字路口
+        createInitialRoads();
+        
+        // 事件监听
+        window.addEventListener('resize', onWindowResize);
+        document.getElementById('addRoad').addEventListener('click', addRandomRoad);
+        document.getElementById('addIntersection').addEventListener('click', addIntersectionAtCenter);
+        document.getElementById('reset').addEventListener('click', resetRoadNetwork);
+        
+        // 初始道路创建
+        function createInitialRoads() {
+            // 创建初始十字路口
+            addIntersection(0, 0, 0);
+            
+            // 创建几条初始道路
+            addRoadFromIntersection(0, new THREE.Vector3(10, 0, 0));
+            addRoadFromIntersection(0, new THREE.Vector3(-10, 0, 0));
+            addRoadFromIntersection(0, new THREE.Vector3(0, 0, 10));
+            addRoadFromIntersection(0, new THREE.Vector3(0, 0, -10));
+        }
+        
+        // 添加随机道路
+        function addRandomRoad() {
+            if (roadNetwork.intersections.length === 0) return;
+            
+            const intersectionIndex = Math.floor(Math.random() * roadNetwork.intersections.length);
+            const intersection = roadNetwork.intersections[intersectionIndex];
+            
+            // 随机方向
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 5 + Math.random() * 10;
+            const target = new THREE.Vector3(
+                intersection.position.x + Math.cos(angle) * distance,
+                0,
+                intersection.position.z + Math.sin(angle) * distance
+            );
+            
+            addRoadFromIntersection(intersectionIndex, target);
+        }
+        
+        // 在中心添加十字路口
+        function addIntersectionAtCenter() {
+            addIntersection(0, 0, 0);
+        }
+        
+        // 添加十字路口
+        function addIntersection(x, y, z) {
+            const intersectionGeometry = new THREE.CylinderGeometry(2, 2, 0.1, 32);
+            const intersection = new THREE.Mesh(intersectionGeometry, intersectionMaterial);
+            intersection.position.set(x, y + 0.05, z);
+            intersection.receiveShadow = true;
+            scene.add(intersection);
+            
+            roadNetwork.intersections.push(intersection);
+            roadNetwork.intersectionNodes.push({
+                position: new THREE.Vector3(x, y, z),
+                connectedRoads: []
+            });
+            
+            return roadNetwork.intersections.length - 1;
+        }
+        
+        // 从十字路口添加道路
+        function addRoadFromIntersection(intersectionIndex, targetPoint) {
+            const intersection = roadNetwork.intersections[intersectionIndex];
+            const intersectionNode = roadNetwork.intersectionNodes[intersectionIndex];
+            
+            // 创建控制点（道路中间点）
+            const midPoint = new THREE.Vector3().lerpVectors(
+                intersection.position, 
+                targetPoint, 
+                0.5
+            );
+            
+            // 稍微偏移中间点使道路有弧度
+            const direction = new THREE.Vector3().subVectors(targetPoint, intersection.position).normalize();
+            const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x);
+            midPoint.add(perpendicular.multiplyScalar((Math.random() - 0.5) * 3));
+            
+            // 创建曲线
+            const curve = new THREE.CatmullRomCurve3([
+                intersection.position,
+                midPoint,
+                targetPoint
+            ]);
+            
+            // 创建道路网格
+            const roadPoints = curve.getPoints(50);
+            const roadGeometry = createRoadGeometry(roadPoints, 1.5);
+            const road = new THREE.Mesh(roadGeometry, roadMaterial);
+            road.receiveShadow = true;
+            scene.add(road);
+            
+            // 添加道路到数据结构
+            const roadData = {
+                curve: curve,
+                mesh: road,
+                startIntersection: intersectionIndex,
+                endIntersection: null, // 暂时没有连接到的路口
+                handles: []
+            };
+            
+            roadNetwork.roads.push(roadData);
+            intersectionNode.connectedRoads.push(roadNetwork.roads.length - 1);
+            
+            // 创建控制点可视化
+            createControlPoints(roadData, intersection.position, midPoint, targetPoint);
+            
+            return roadNetwork.roads.length - 1;
+        }
+        
+        // 创建道路几何体
+        function createRoadGeometry(points, width) {
+            const roadGeometry = new THREE.BufferGeometry();
+            const vertices = [];
+            const indices = [];
+            
+            // 为每个点创建左右边界点
+            for (let i = 0; i < points.length; i++) {
+                const point = points[i];
+                let direction;
+                
+                if (i === 0) {
+                    // 第一个点，使用第一个线段的方向
+                    direction = new THREE.Vector3().subVectors(points[1], points[0]).normalize();
+                } else if (i === points.length - 1) {
+                    // 最后一个点，使用最后一个线段的方向
+                    direction = new THREE.Vector3().subVectors(points[points.length - 1], points[points.length - 2]).normalize();
+                } else {
+                    // 中间点，使用前后点的平均方向
+                    const prevDir = new THREE.Vector3().subVectors(points[i], points[i-1]).normalize();
+                    const nextDir = new THREE.Vector3().subVectors(points[i+1], points[i]).normalize();
+                    direction = new THREE.Vector3().addVectors(prevDir, nextDir).normalize();
+                }
+                
+                // 计算垂直于方向的向量
+                const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x).normalize();
+                
+                // 左右边界点
+                const left = new THREE.Vector3().copy(point).add(perpendicular.multiplyScalar(width / 2));
+                const right = new THREE.Vector3().copy(point).add(perpendicular.multiplyScalar(-width / 2));
+                
+                vertices.push(left.x, left.y, left.z);
+                vertices.push(right.x, right.y, right.z);
+            }
+            
+            // 创建三角形索引
+            for (let i = 0; i < points.length - 1; i++) {
+                const start = i * 2;
+                indices.push(
+                    start, start + 1, start + 2,
+                    start + 1, start + 3, start + 2
+                );
+            }
+            
+            roadGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            roadGeometry.setIndex(indices);
+            roadGeometry.computeVertexNormals();
+            
+            return roadGeometry;
+        }
+        
+        // 创建控制点
+        function createControlPoints(roadData, startPoint, midPoint, endPoint) {
+            // 起点（通常与路口重合，不单独创建）
+            // 中间控制点
+            const midHandle = new THREE.Mesh(handleGeometry, handleMaterial);
+            midHandle.position.copy(midPoint);
+            midHandle.userData.roadIndex = roadNetwork.roads.indexOf(roadData);
+            midHandle.userData.pointIndex = 1; // 曲线中的索引
+            scene.add(midHandle);
+            roadData.handles.push(midHandle);
+            roadNetwork.roadHandles.push(midHandle);
+            
+            // 终点控制点
+            const endHandle = new THREE.Mesh(handleGeometry, handleMaterial);
+            endHandle.position.copy(endPoint);
+            endHandle.userData.roadIndex = roadNetwork.roads.indexOf(roadData);
+            endHandle.userData.pointIndex = 2; // 曲线中的索引
+            scene.add(endHandle);
+            roadData.handles.push(endHandle);
+            roadNetwork.roadHandles.push(endHandle);
+            
+            // 添加控制点交互
+            setupControlPointInteraction(midHandle);
+            setupControlPointInteraction(endHandle);
+        }
+        
+        // 设置控制点交互
+        function setupControlPointInteraction(handle) {
+            handle.cursor = 'pointer';
+            
+            // 鼠标悬停效果
+            handle.onPointerOver = function() {
+                document.body.style.cursor = 'pointer';
+                this.material.color.set(0xffff00);
+            };
+            
+            handle.onPointerOut = function() {
+                document.body.style.cursor = 'default';
+                this.material.color.set(0xff0000);
+            };
+            
+            // 点击选择控制点
+            handle.onClick = function() {
+                transformControl.attach(this);
+            };
+        }
+        
+        // 更新道路几何体
+        function updateRoadGeometry(roadIndex) {
+            const road = roadNetwork.roads[roadIndex];
+            const curve = road.curve;
+            
+            // 获取更新后的点
+            const points = curve.getPoints(50);
+            
+            // 创建新的几何体
+            const newGeometry = createRoadGeometry(points, 1.5);
+            
+            // 替换几何体
+            road.mesh.geometry.dispose();
+            road.mesh.geometry = newGeometry;
+        }
+        
+        // 变换控制事件
+        transformControl.addEventListener('objectChange', function() {
+            // 当控制点移动时更新相关道路
+            const controlledObject = transformControl.object;
+            if (controlledObject && controlledObject.userData.roadIndex !== undefined) {
+                const roadIndex = controlledObject.userData.roadIndex;
+                const pointIndex = controlledObject.userData.pointIndex;
+                
+                // 更新曲线点
+                const road = roadNetwork.roads[roadIndex];
+                road.curve.points[pointIndex].copy(controlledObject.position);
+                
+                // 更新道路几何体
+                updateRoadGeometry(roadIndex);
+            }
+        });
+        
+        transformControl.addEventListener('dragging-changed', function(event) {
+            controls.enabled = !event.value;
+        });
+        
+        // 重置路网
+        function resetRoadNetwork() {
+            // 移除所有道路和路口
+            roadNetwork.roads.forEach(road => {
+                scene.remove(road.mesh);
+                road.mesh.geometry.dispose();
+                road.handles.forEach(handle => {
+                    scene.remove(handle);
+                    handle.geometry.dispose();
+                });
+            });
+            
+            roadNetwork.intersections.forEach(intersection => {
+                scene.remove(intersection);
+                intersection.geometry.dispose();
+            });
+            
+            // 清空数据结构
+            roadNetwork.roads = [];
+            roadNetwork.intersections = [];
+            roadNetwork.roadHandles = [];
+            roadNetwork.intersectionNodes = [];
+            
+            // 重新创建初始路网
+            createInitialRoads();
+        }
+        
+        // 窗口大小调整
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
+        // 光线投射和交互
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            // 更新光线投射
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 检查与控制点的交互
+            const intersects = raycaster.intersectObjects(roadNetwork.roadHandles);
+            
+            // 重置所有控制点颜色
+            roadNetwork.roadHandles.forEach(handle => {
+                if (handle.onPointerOut) handle.onPointerOut();
+            });
+            
+            // 高亮悬停的控制点
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                if (object.onPointerOver) object.onPointerOver();
+            }
+        }
+        
+        function onMouseClick(event) {
+            // 更新光线投射
+            raycaster.setFromCamera(mouse, camera);
+            
+            // 检查与控制点的交互
+            const intersects = raycaster.intersectObjects(roadNetwork.roadHandles);
+            
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                if (object.onClick) object.onClick();
+            } else {
+                // 如果没有点击控制点，取消当前选中的控制点
+                transformControl.detach();
+            }
+        }
+        
+        // 添加事件监听器
+        window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('click', onMouseClick, false);
+        
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 import {onMounted, onUnmounted, ref} from 'vue'
 import {debounce} from 'lodash-es'
 import {Earcut, OrbitControls, Stats, THREE} from '@/utils/threeModules'
-import SquaresAndText from "@/models/SquaresAndText";
+import SquaresAndText from "@/models/codeModel/SquaresAndText";
 
 // DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)
