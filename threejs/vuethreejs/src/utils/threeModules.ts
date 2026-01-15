@@ -14,6 +14,7 @@ import { outline } from 'three/addons/tsl/display/OutlineNode.js';
 import * as CANNON from 'cannon';
 import type {Vec3} from 'cannon';
 import { Earcut } from 'three/src/extras/Earcut';
+import * as TWEEN from "three/examples/jsm/libs/tween.module.js";
 // 其他需要的模块...
 
 export {
@@ -35,6 +36,7 @@ export {
     oscSine,
     outline,
     Earcut,
+    TWEEN,
 };
 
 export type {

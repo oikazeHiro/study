@@ -10,8 +10,7 @@
 import {onMounted, onUnmounted, ref} from 'vue'
 import {debounce} from 'lodash-es'
 import {Earcut, OrbitControls, Stats, THREE} from '@/utils/threeModules'
-import {getStaticUrl} from "@/utils/util";
-import CurvedBar from "@/models/CurvedBar";
+import SquaresAndText from "@/models/SquaresAndText";
 
 // DOM 引用
 const canvasContainer = ref<HTMLElement | null>(null)
@@ -35,181 +34,6 @@ const initScene = () => {
   // 添加辅助网格
   const gridHelper = new THREE.GridHelper(20, 20, 0xe2e8f0, 0xf1f5f9);
   scene.add(gridHelper);
-
-  // 定义底座形状（不规则五边形）
-  baseShape = [
-    {x: 0, y: 0},    // 顶点0
-    {x: 4, y: 0},    // 顶点1
-    {x: 5, y: 3},    // 顶点2
-    {x: 2, y: 5},    // 顶点3
-    {x: -1, y: 2}    // 顶点4
-  ];
-  // 初始上部高度
-  // topHeights = [1.2, 3.5, 2.1, 4.3, 1.8];
-  topHeights = [0.1, 0.1, 0.1, 0.1, 0.1];
-  // createIrregularModel()
-  const data = {
-    id: '10086',
-    name: 'irregularModel',
-    baseShape: baseShape,
-    topHeights: topHeights
-  }
-  // const irregularShape = new IrregularShape(scene, data)
-
-  // 动态设置高度贴图
-  const textureLoader = new THREE.TextureLoader();
-  // textureLoader.load(getStaticUrl('~/blender/test.jpg'), (heightMap) => {
-  //   irregularShape.setHeightMap(heightMap, 0.5).recreateModel();
-  // });
-
-  const data2 = {
-    id: '10087',
-    name: 'irregularModel2',
-    baseShape: [
-      {x: 0, y: 0},
-      {x: 0, y: 5},
-      {x: 5, y: 5},
-      {x: 5, y: 10},
-      {x: 10, y: 10},
-      {x: 0, y: 10},
-    ],
-    topHeights: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-    // colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Displacement.jpg'),
-    // heightMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-  }
-  // const irregularShape2 = new IrregularShape2(scene, data2)
-
-  const planeData = {
-    width: 20,
-    height: 20,
-    widthSegments: 512,
-    heightSegments: 512,
-
-    // 纹理URL
-    colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-    heightMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Displacement.jpg'),
-    normalMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_NormalGL.jpg'),
-
-    // 纹理参数
-    textureRepeat: [1, 1],
-    displacementScale: 4.0,
-    normalScaleX: 1.0,
-    normalScaleY: 1.0,
-
-    // 材质参数
-    roughness: 0.8,
-    metalness: 0.2
-  };
-
-  // const plane = new PlaneHeight(scene, planeData);
-
-
-  const data3 = {
-    id: 'csv-plane',
-    modName: 'CSV Height Plane with Textures',
-    csvUrl: getStaticUrl('~/blender/data_1_reduced.csv'),
-    colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-    normalMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_NormalGL.jpg'),
-    // color: 0xffffff,
-    margin: 0.1,
-    maxWidthSegments: 512,
-    maxHeightSegments: 512,
-    textureRepeat: [8, 8], // 纹理重复
-    normalScaleX: 1.0,     // 法线贴图缩放
-    normalScaleY: 1.0
-  }
-  const vertices = [
-    {x: 0, y: 0},
-    {x: 0, y: 5},
-    {x: 5, y: 5},
-    {x: 5, y: 10},
-    {x: 10, y: 10},
-    {x: 0, y: 10},
-  ];
-
-  // const radialPlane = new RadialHeightPlane(scene, {
-  //   id: 'radial-terrain',
-  //   modName: 'Radial Height Terrain',
-  //   vertices: vertices,
-  //   maxHeight: 8,
-  //   heightFunction: 'cosine', // 可选择: 'cosine', 'sine', 'quadratic', 'exponential', 'circular'
-  //   colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-  //   normalMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_NormalGL.jpg'),
-  //   widthSegments: 128,
-  //   heightSegments: 128,
-  //   color: 0x88ff88,
-  //   roughness: 0.7,
-  //   metalness: 0.1
-  // });
-// const csvPlane = new PlaneHeightFromCSV(scene, data3)
-
-
-  // 不规则图形示例
-  const irregularVertices = [
-    {x: -6, y: -4},
-    {x: 2, y: -6},
-    {x: 8, y: -2},
-    {x: 6, y: 4},
-    {x: 0, y: 7},
-    {x: -5, y: 5},
-    {x: -8, y: 1}
-  ];
-
-  // const irregularPlane = new RadialHeightPlane(scene, {
-  //   id: 'irregular-terrain',
-  //   modName: 'Irregular Shape Terrain',
-  //   vertices: irregularVertices,
-  //   maxHeight: 5,
-  //   heightFunction: 'cosine',
-  //   falloffSharpness: 1.5, // 控制衰减锐度
-  //   colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-  //   normalMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_NormalGL.jpg'),
-  //   widthSegments: 512,    // 增加分段数以更好地表现不规则边缘
-  //   heightSegments: 512,
-  //   color: 0xffffff
-  // });
-
-
-  // const circularRibbon = new CircularRibbon(scene, {
-  //   id: 'circular-ribbon',
-  //   modName: 'Circular Ribbon',
-  //   pathPoints: [
-  //     {x: -30, y: 0, z: 0},
-  //     {x: -15, y: 15, z: 10},
-  //     {x: 0, y: 0, z: 20},
-  //     {x: 15, y: -15, z: 10},
-  //     {x: 30, y: 0, z: 0}
-  //   ],
-  //   pointScales: [0.2, 0.8, 1.2, 0.8, 0.2], // 每个点的独立缩放
-  //   pathType: 'catmullrom',
-  //   pathClosed: false,
-  //   circleRadius: 3,
-  //   circleSegments: 16,
-  //   color: 0x88aaff,
-  //   roughness: 0.6,
-  //   metalness: 0.2,
-  //   steps: 80,
-  //   colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-  //   normalMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_NormalGL.jpg'),
-  //   castShadow: true,
-  //   receiveShadow: true
-  // });
-  const nodes = [
-    {position: new THREE.Vector3(0, 0, 0), radius: 0.5},
-    {position: new THREE.Vector3(0.5, 1, 0.2), radius: 0.8},
-    {position: new THREE.Vector3(1, 2, 0), radius: 0.2}
-  ];
-  const bar = new CurvedBar(scene, {
-    nodes,
-    tubularSegments: 300,
-    radialSegments: 16,
-    color: 0xffffff,
-    colorMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_Color.jpg'),
-    normalMapUrl: getStaticUrl('~/blender/Rock058_1K-JPG_NormalGL.jpg'),
-  });
-  // bar.setTextureRepeat(4, 1);
-
-
   // 光源
   scene.add(new THREE.AmbientLight(0x404040))
   const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5)
@@ -218,6 +42,41 @@ const initScene = () => {
 
   // 辅助工具
   scene.add(new THREE.AxesHelper(2))
+
+
+  let stepx = 5, stepy = 5;
+  for (let i = 0; i < 50; i++) {
+    for (let j = 0; j < 50; j++) {
+      let verticalAlign = '';
+      if (j % 3 == 0)
+        verticalAlign = 'top';
+      if (j % 3 == 1)
+        verticalAlign = 'middle';
+      if (j % 3 == 2)
+        verticalAlign = 'bottom';
+      const SquaresAndTextData = {
+        plane: {
+          width: 5,
+          height: 5,
+          color: getRandomColor(),
+        },
+        text: {
+          message: (i*50+(j+1))+'',
+          color: getRandomColor(),
+          verticalAlign: verticalAlign,
+          size: 1,
+        },
+        initialPosition: new THREE.Vector3(i * stepx, 0, j * stepy),
+      }
+
+      new SquaresAndText(scene, SquaresAndTextData, null, clock, renderer)
+    }
+  }
+
+
+}
+const getRandomColor = () => {
+  return Math.floor(Math.random() * 0x1000000);
 }
 
 const createIrregularModel = () => {
@@ -326,9 +185,9 @@ const animate = () => {
 
   // 旋转立方体
   // cube.rotation.y += 0.01
-  cubes.map(cube => {
-    cube.rotation.y += 0.01
-  })
+  // cubes.map(cube => {
+  //   cube.rotation.y += 0.01
+  // })
 
   // 更新控制器
   controls?.update()
@@ -352,8 +211,8 @@ const initThree = () => {
 
   // 设置相机
   camera.aspect = width / height
-  camera.position.set(17, 10, 17)
-  camera.lookAt(10, 0, 10)
+  camera.position.set(0, 20, 0)
+  camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
 
   // 添加性能监控
@@ -368,7 +227,6 @@ const initThree = () => {
 
   // 初始化控制器
   controls = new OrbitControls(camera, renderer.domElement)
-  controls.target.set(10, 0, 10)
   controls.enableDamping = true
   controls.dampingFactor = 0.05
 }

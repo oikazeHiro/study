@@ -35,7 +35,7 @@ scene.add(ambientLight)
 scene.add(new THREE.AxesHelper(2)) // 坐标轴辅助器
 const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
 directionalLight.position.set(5, 5, 5).normalize() // 定向光
-scene.add(directionalLight)
+// scene.add(directionalLight)
 
 // 安全的材质清理函数
 function disposeMaterial(material: THREE.Material | THREE.Material[]): void {
@@ -57,9 +57,14 @@ function createOutlineEffect() {
       const originalMaterial = mesh.material;
 
       // 创建描边材质
-      const outlineMaterial = new THREE.MeshBasicMaterial({
+      const outlineMaterial = new THREE.MeshPhongMaterial({
         color: new THREE.Color(outlineParams.color),
-        side: THREE.BackSide
+        side: THREE.BackSide,
+        transparent: true,
+        opacity: outlineParams.alpha,
+        emissive: new THREE.Color(outlineParams.color),
+        emissiveIntensity: 10,
+        shininess: 100 // 可以调整光泽度
       });
 
       // 创建描边网格
