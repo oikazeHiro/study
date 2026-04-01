@@ -1,24 +1,36 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "Bundler", // 改为 Bundler 适配 Vite
+    "moduleResolution": "Bundler",
     "baseUrl": "./",
     "paths": {
       "@/*": ["src/*"],
       "~/*": ["src/*"],
       "three/examples/jsm/*": ["node_modules/three/examples/jsm/*"]
     },
-    "types": ["vite/client"], // 添加 Vite 类型
+    "types": ["vite/client"],
     "typeRoots": ["./types", "./node_modules/@types"],
     "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noFallthroughCasesInSwitch": true
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.vue",
-    "vite.config.ts", // 包含配置文件
-    "src",
-    "types"
+    "vite.config.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
   ]
 }
