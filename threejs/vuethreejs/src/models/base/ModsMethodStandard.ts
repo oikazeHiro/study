@@ -9,17 +9,6 @@ import ModelMove from "@/models/utils/modelMove";
  */
 export default interface ModsMethodStandard {
 
-    /** 数据存储映射表，用于存储模型的自定义数据 */
-    dataMap: Map<string, any>;
-
-    /** 原始 3D 模型对象 */
-    primitiveModel: THREE.Object3D;
-
-    /** 动画动作列表，管理模型的所有动画状态 */
-    AnimationActions: Array<THREE.AnimationAction>;
-
-
-
     /**
      * 初始化模型方法
      *

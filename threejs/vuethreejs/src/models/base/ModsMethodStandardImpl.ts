@@ -1,4 +1,4 @@
-import {anyDataToEuler, anyDataToVector3, THREE} from '@/utils/threeModules'
+import { anyDataToEuler, anyDataToVector3, THREE } from '@/utils/threeModules'
 import ModelMove from "@/models/utils/modelMove";
 import ModsMethodStandard from "@/models/base/ModsMethodStandard";
 
@@ -8,7 +8,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
     primitiveModel: THREE.Object3D;
     group: THREE.Group;
     key: string;
-    front: THREE.Vector3 = new THREE.Vector3(0,0,1)
+    front: THREE.Vector3 = new THREE.Vector3(0, 0, 1)
     animationClips: Array<THREE.AnimationClip> = [];
 
     constructor() {
@@ -31,7 +31,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
         return this;
     }
 
-    private addModel(primitiveModel:  THREE.Object3D, value: any, key: string): THREE.Object3D{
+    private addModel(primitiveModel: THREE.Object3D, value: any, key: string): THREE.Object3D {
         const model = primitiveModel.clone(true);
         if (value.position) {
             model.position.copy(anyDataToVector3(value.position));
@@ -74,10 +74,20 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
 
     updateData(dataMap: Map<string, any>): this {
         dataMap.forEach((value, key) => {
-            this.dataMap.set(key, {
-                ...dataMap.get(key),
-                ...value
-            });
+            const data = dataMap.get(key);
+            if (!data) {
+                this.addModel(this.primitiveModel, value, key);
+            } else {
+                this.dataMap.set(key, {
+                    ...data,
+                    ...value
+                });
+                this.setPosition(key, anyDataToVector3(value.position));
+                this.setRotation(key, anyDataToEuler(value.rotation));
+                this.setScale(key, anyDataToVector3(value.scale));
+                this.setVisible(key, value?.status === 'normal');
+            }
+
         })
         return this;
     }
@@ -151,6 +161,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
     }
 
     disposeAll(): void {
+        this.dataMap.clear();
         this.group.children.forEach((child) => {
             if (child instanceof THREE.Mesh) {
                 child.geometry.dispose();
