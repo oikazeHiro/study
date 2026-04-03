@@ -170,6 +170,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
                 child.material.dispose();
             }
         });
+        console.log(this.key + ": 资源已清理")
     }
 
     getCss2dHtml(): string {
