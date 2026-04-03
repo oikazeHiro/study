@@ -7,6 +7,11 @@ const routes = [
     component: () => import('@/components/HelloWorld.vue'),
     name: '',
     children: routerData
+  },
+  {
+    path: '/home',
+    component: () => import('@/components/example/home.vue'),
+    name: 'home',
   }
 ];
 

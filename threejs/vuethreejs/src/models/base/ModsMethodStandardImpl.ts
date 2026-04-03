@@ -27,7 +27,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
         for (const [key, value] of dataMap) {
             this.addModel(primitiveModel, value, key);
         }
-
+        this.group.name = this.key;
         return this;
     }
 
@@ -40,14 +40,16 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
             model.rotation.copy(anyDataToEuler(value.rotation));
         }
         if (value.scale) {
-            model.scale.copy(anyDataToVector3(value.scale));
+            const newLocal = anyDataToVector3(value.scale);
+            console.log("scale",key, value.scale, newLocal);
+            model.scale.copy(newLocal);
         }
         if (value?.status === 'normal') {
             model.visible = true;
         } else {
             model.visible = false;
         }
-        model.uuid = key + value?.id;
+        model.uuid = this.key+ "_" + key;
         model.name = model.uuid;
         this.group.add(model);
         return model;
