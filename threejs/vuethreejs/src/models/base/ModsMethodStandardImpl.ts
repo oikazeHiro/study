@@ -44,11 +44,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
             console.log("scale",key, value.scale, newLocal);
             model.scale.copy(newLocal);
         }
-        if (value?.status === 'normal') {
-            model.visible = true;
-        } else {
-            model.visible = false;
-        }
+        model.visible = value?.status === 'normal';
         model.uuid = this.key+ "_" + key;
         model.name = model.uuid;
         this.group.add(model);
