@@ -1,8 +1,10 @@
 <template>
-  <el-container>
-    <el-main>
-      <div ref="canvasContainer" class="three-container"></div>
-    </el-main>
+  <el-container class="app-container">
+    <!-- Canvas 背景层 -->
+    <div ref="canvasContainer" class="canvas-background"></div>
+    <!-- UI 叠加层 -->
+    <div class="ui-layer">
+    </div>
   </el-container>
 </template>
 
@@ -70,19 +72,45 @@ onUnmounted(() => {
 .el-container {
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow: hidden; /* 隐藏容器滚动条 */
 }
 
 .el-main {
   padding: 0 !important;
-  overflow: hidden;
+  overflow: hidden; /* 隐藏 main 滚动条 */
 }
 
 .three-container {
   width: 100%;
   height: 100%;
   position: relative;
-  touch-action: none;
-  /* 防止触摸事件冲突 */
+  touch-action: none; /* 防止触摸事件冲突 */
+  overflow: hidden; /* 隐藏容器滚动条 */
+}
+
+/* 全局样式 - 确保 body 和 html 没有滚动条 */
+:global(html),
+:global(body) {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Canvas 背景层 */
+.canvas-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* UI 叠加层 */
+.ui-layer {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  background: transparent; /* 透明背景 */
 }
 </style>
