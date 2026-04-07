@@ -34,6 +34,15 @@ const init = async () => {
 
   // 确保模型已加载完成后再添加数据
   addModel()
+
+  sceneModelManager.stats.domElement.style.cssText = `
+    position: absolute;
+    top: 0;
+    left: 0;
+    cursor: pointer;
+    opacity: 0.9;
+  `
+  canvasContainer.value.appendChild(sceneModelManager.stats.domElement)
 }
 
 const addModel = () => {

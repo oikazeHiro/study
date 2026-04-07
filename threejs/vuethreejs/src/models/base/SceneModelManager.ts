@@ -1,9 +1,13 @@
-import { THREE, OrbitControls, } from '@/utils/threeModules'
+import { THREE, OrbitControls, Stats } from '@/utils/threeModules'
 import HdMod from './HdMod';
 import ModelStandardLoader from './ModelStandardLoader';
 import SanHuoShipModel from '../loaderModel/SanHuoShipModel';
 import ModsMethodStandardImpl from './ModsMethodStandardImpl';
 import ModsMethodStandard from './ModsMethodStandard';
+import StaticModel from "@/models/base/StaticModel";
+import MySky from "@/models/codeModel/MySky";
+import MySea from "@/models/codeModel/MySea";
+
 
 export default class SceneModelManager {
 
@@ -14,9 +18,10 @@ export default class SceneModelManager {
     });
     camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     controls: OrbitControls = new OrbitControls(this.camera, this.renderer.domElement);
-    hdModelMap: Map<string, HdMod> = new Map();
+    staticModels: Map<string, StaticModel> = new Map();
     modsMethodStandardMap: Map<string, ModsMethodStandard> = new Map();
     modelStandardLoader: ModelStandardLoader = new ModelStandardLoader();
+    stats: Stats = new Stats()
 
     data: any = {};
 
@@ -42,7 +47,16 @@ export default class SceneModelManager {
         return this.modelStandardLoader.initialize().then(() => {
             this.loaderModsMethodStandard();
             this.startAnimationLoop();
+            this.initStaticeModels();
         });
+    }
+
+
+    initStaticeModels(){
+        const mySky = new MySky(this.scene, this.renderer);
+        this.staticModels.set('sky', mySky);
+        const mySea = new MySea(this.scene, this.renderer);
+        this.staticModels.set('sea', mySea);
     }
 
     startAnimationLoop(): void {
@@ -50,6 +64,10 @@ export default class SceneModelManager {
             this.animationId = requestAnimationFrame(animate);
             // 更新控制器
             this.controls.update();
+            this.staticModels.forEach((value) => {
+                value.animate();
+            })
+            this.stats.update()
             // 渲染场景
             this.renderer.render(this.scene, this.camera);
         };
@@ -113,11 +131,10 @@ export default class SceneModelManager {
         })
         this.modelStandardLoader.dispose();
         this.scene.remove(...this.scene.children);
-        this.hdModelMap.forEach((value) => {
+        this.staticModels.forEach((value) => {
             value.dispose();
         })
         this.modsMethodStandardMap.clear();
-        this.hdModelMap.clear();
     }
 
     setRendererSize(width: number, height: number): void {
