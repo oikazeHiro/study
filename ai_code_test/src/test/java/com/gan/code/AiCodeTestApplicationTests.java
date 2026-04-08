@@ -20,8 +20,9 @@ class AiCodeTestApplicationTests {
     @Test
     void imageTest(){
         UserMessage userMessage = UserMessage.from(
-                TextContent.from("解析图片文字"),
-                ImageContent.from("https://download.ydstatic.com/ead/zhiyun/guanwang_cdn_2019/images/p-ocr/cookbook100K.jpg")
+                TextContent.from("解析图片,用中文回答"),
+                ImageContent.from("https://c-ssl.duitang.com/uploads/blog/202308/22/aLS39xEet0Wx5oZ.jpg")
+//                "你好"
         );
         String result = aiCodeHelper.chat(userMessage);
         System.out.println(result);

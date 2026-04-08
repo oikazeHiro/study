@@ -3,9 +3,15 @@ spring:
     name: ai_code_test
 
 langchain4j:
-  open-ai:
+#  open-ai:
+#    chat-model:
+#      api-key: sk-660e9de114e841a2aa7bfbacd8aa890e
+#      base-url: https://api.deepseek.com
+#      model-name: deepseek-chat
+#      max-tokens: 4096
+  ollama:
     chat-model:
-      api-key: sk-660e9de114e841a2aa7bfbacd8aa890e
-      base-url: https://api.deepseek.com
-      model-name: deepseek-chat
-      max-tokens: 4096
+      base-url: http://127.0.0.1:11434
+      model-name: qwen3-vl:4b
+      log-requests: true
+      log-responses: true

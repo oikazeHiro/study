@@ -27,7 +27,6 @@ export default class ModsMethodStandard {
     configMap: Map<string, ModelConfig> = new Map();
     // 当前加载进度（0-100）
     loadingProgress: number = 0;
-
     // 进度更新回调函数
     onProgressCallback?: (progress: number) => void;
 
@@ -44,6 +43,51 @@ export default class ModsMethodStandard {
             path: '',
             key: "sanHuoShip",
             name: "散货船",
+        },
+        {
+            isNeedLoaded: true,
+            lowModelPath: "/models/car/car.glb",
+            mediumModelPath: "/models/car/car.glb",
+            highModelPath: "/models/car/car.glb",
+            path: '',
+            key: "car",
+            name: "车",
+        },
+        {
+            isNeedLoaded: true,
+            lowModelPath: "/models/ground/ground1.glb",
+            mediumModelPath: "/models/ground/ground1.glb",
+            highModelPath: "/models/ground/ground1.glb",
+            path: '',
+            key: "ground",
+            name: "地面",
+        },
+        {
+            isNeedLoaded: true,
+            lowModelPath: "/models/machine/anQiao.glb",
+            mediumModelPath: "/models/machine/anQiao.glb",
+            highModelPath: "/models/machine/anQiao.glb",
+            path: '',
+            key: "anQiao",
+            name: "岸桥",
+        },
+        {
+            isNeedLoaded: true,
+            lowModelPath: "/models/machine/ChangQiao.glb",
+            mediumModelPath: "/models/machine/ChangQiao.glb",
+            highModelPath: "/models/machine/ChangQiao.glb",
+            path: '',
+            key: "changQiao",
+            name: "场桥",
+        },
+        {
+            isNeedLoaded: true,
+            lowModelPath: "/models/machine/container.glb",
+            mediumModelPath: "/models/machine/container.glb",
+            highModelPath: "/models/machine/container.glb",
+            path: '',
+            key: "container",
+            name: "集装箱",
         },
     ];
 

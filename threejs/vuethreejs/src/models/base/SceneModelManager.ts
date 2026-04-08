@@ -1,5 +1,5 @@
 import { THREE, OrbitControls, Stats } from '@/utils/threeModules'
-import HdMod from './HdMod';
+import merge from 'lodash/merge';
 import ModelStandardLoader from './ModelStandardLoader';
 import SanHuoShipModel from '../loaderModel/SanHuoShipModel';
 import ModsMethodStandardImpl from './ModsMethodStandardImpl';
@@ -107,10 +107,7 @@ export default class SceneModelManager {
     }
 
     addLoaderSceneByData(data: any): void {
-        this.data = {
-            ...this.data,
-            ...data
-        };
+        merge(this.data,data)
         let modelKeys = this.modelStandardLoader.getLoadedModelKeys();
         modelKeys.forEach((key) => {
             const model = this.modelStandardLoader.getModel(key);
@@ -119,6 +116,18 @@ export default class SceneModelManager {
                 const mapData = new Map<string, any>(Object.entries(newLocal));
                 this.modsMethodStandardMap.get(key)?.init(key, mapData, model)
                     .addScene(this.scene);
+            }
+        })
+    }
+
+    updateLoaderSceneByData(data: any):void{
+        merge(this.data,data)
+        let modelKeys = this.modelStandardLoader.getLoadedModelKeys();
+        modelKeys.forEach((key) => {
+            const newLocal = data[key];
+            if (newLocal) {
+                const mapData = new Map<string, any>(Object.entries(newLocal));
+                this.modsMethodStandardMap.get(key)?.updateAll(mapData);
             }
         })
     }
