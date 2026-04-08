@@ -1,4 +1,4 @@
-import { THREE, OrbitControls, Stats } from '@/utils/threeModules'
+import {OrbitControls, Stats, THREE} from '@/utils/threeModules'
 import merge from 'lodash/merge';
 import ModelStandardLoader from './ModelStandardLoader';
 import SanHuoShipModel from '../loaderModel/SanHuoShipModel';
@@ -7,6 +7,9 @@ import ModsMethodStandard from './ModsMethodStandard';
 import StaticModel from "@/models/base/StaticModel";
 import MySky from "@/models/codeModel/MySky";
 import MySea from "@/models/codeModel/MySea";
+import CarModel from "@/models/loaderModel/CarModel";
+import GroundModel from "@/models/loaderModel/GroundModel";
+import ContainerModel from "@/models/loaderModel/ContainerModel";
 
 
 export default class SceneModelManager {
@@ -52,7 +55,7 @@ export default class SceneModelManager {
     }
 
 
-    initStaticeModels(){
+    initStaticeModels() {
         const mySky = new MySky(this.scene, this.renderer);
         this.staticModels.set('sky', mySky);
         const mySea = new MySea(this.scene, this.renderer);
@@ -98,6 +101,21 @@ export default class SceneModelManager {
                 sanHuoShipModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
                 this.modsMethodStandardMap.set(key, sanHuoShipModel);
                 break;
+            case 'car':
+                let carModel = new CarModel();
+                carModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
+                this.modsMethodStandardMap.set(key, carModel);
+                break;
+            case 'groud':
+                let groudModel = new GroundModel();
+                groudModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
+                this.modsMethodStandardMap.set(key, groudModel);
+                break;
+            case 'container':
+                let containerModel = new ContainerModel();
+                containerModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
+                this.modsMethodStandardMap.set(key, containerModel);
+                break;
             default:
                 let modsMethodStandard = new ModsMethodStandardImpl();
                 modsMethodStandard.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
@@ -107,7 +125,7 @@ export default class SceneModelManager {
     }
 
     addLoaderSceneByData(data: any): void {
-        merge(this.data,data)
+        merge(this.data, data)
         let modelKeys = this.modelStandardLoader.getLoadedModelKeys();
         modelKeys.forEach((key) => {
             const model = this.modelStandardLoader.getModel(key);
@@ -120,8 +138,8 @@ export default class SceneModelManager {
         })
     }
 
-    updateLoaderSceneByData(data: any):void{
-        merge(this.data,data)
+    updateLoaderSceneByData(data: any): void {
+        merge(this.data, data)
         let modelKeys = this.modelStandardLoader.getLoadedModelKeys();
         modelKeys.forEach((key) => {
             const newLocal = data[key];
