@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [vue()],
     server: {
-      port: 3100, // 设置端口为3000
+      port: 9000, // 设置端口为3000
       host: '0.0.0.0', // 允许外部访问
       proxy: {
         '/api': {
