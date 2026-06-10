@@ -21,6 +21,7 @@ export default class SceneModelManager {
     });
     camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     controls: OrbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+    // 静态模型 地形之类的不会改变的模型
     staticModels: Map<string, StaticModel> = new Map();
     modsMethodStandardMap: Map<string, ModsMethodStandard> = new Map();
     modelStandardLoader: ModelStandardLoader = new ModelStandardLoader();

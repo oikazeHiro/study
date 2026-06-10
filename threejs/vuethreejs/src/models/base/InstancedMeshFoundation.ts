@@ -1,0 +1,346 @@
+import {THREE, anyDataToVector3, anyDataToEuler, ModelBasisData, xyz} from '@/utils/threeModules'
+
+/**
+ * 单个实例的完整变换缓存
+ * 继承 ModelBasisData 的元数据字段，但变换属性在缓存中始终存在（不可为空）
+ */
+interface InstanceTransform extends ModelBasisData {
+    position: xyz;
+    rotation: xyz;
+    scale: xyz;
+    visible: boolean;
+}
+
+export class InstancedMeshFoundation {
+    /** 实例数据映射，value 结构参见 ModelBasisData */
+    dataMap: Map<string, any>;
+    num: number;
+    instancedMesh!: THREE.InstancedMesh;
+    geometry!: THREE.BufferGeometry;
+    /** data key → instancedMesh 中的索引 */
+    keyMap: Map<string, number>;
+    /** 每个实例的完整变换缓存，key 同 dataMap */
+    private instanceTransforms: Map<string, InstanceTransform>;
+
+    constructor() {
+        this.dataMap = new Map();
+        this.num = 0;
+        this.keyMap = new Map();
+        this.instanceTransforms = new Map();
+    }
+
+    /**
+     * 初始化 InstancedMesh 并设置所有实例的初始矩阵
+     * @param geometry 共享几何体
+     * @param material 共享材质（需支持 instancing）
+     * @param dataMap 实例数据，每项可含 position/rotation/scale/visible/color
+     */
+    init(geometry: THREE.BufferGeometry, material: THREE.Material, dataMap: Map<string, any>): this {
+        this.geometry = geometry;
+        this.dataMap = dataMap;
+        this.refreshKeyMap(dataMap);
+        this.instancedMesh = new THREE.InstancedMesh(geometry, material, this.num);
+        this.instanceTransforms.clear();
+        this.initAllMatrices(dataMap);
+        return this;
+    }
+
+    // ======================== 内部工具 ========================
+
+    /**
+     * 根据 dataMap 重建 key→index 映射
+     */
+    private refreshKeyMap(dataMap: Map<string, any>): void {
+        this.num = dataMap.size;
+        this.keyMap.clear();
+        let i = 0;
+        dataMap.forEach((_value, key) => {
+            this.keyMap.set(key, i);
+            i++;
+        });
+    }
+
+    /**
+     * 遍历 dataMap 写入所有实例的初始矩阵与颜色
+     */
+    private initAllMatrices(dataMap: Map<string, any>): void {
+        const dummy = new THREE.Object3D();
+        dataMap.forEach((value, key) => {
+            const index = this.keyMap.get(key);
+            if (index === undefined) return;
+
+            const position = value.position ? anyDataToVector3(value.position) : new THREE.Vector3();
+            const rotation = value.rotation ? anyDataToEuler(value.rotation) : new THREE.Euler();
+            const scale = value.scale ? anyDataToVector3(value.scale) : new THREE.Vector3(1, 1, 1);
+            const visible = value.visible !== undefined ? !!value.visible : true;
+
+            // 缓存完整变换，避免后续单属性更新时丢失其他属性
+            this.instanceTransforms.set(key, {
+                id: key,
+                name: value.name,
+                status: value.status,
+                type: value.type,
+                description: value.description,
+                position: new xyz(),
+                rotation: new xyz(),
+                scale: new xyz(1,1,1),
+                visible,
+            });
+
+            // 不可见实例通过 zero-scale 隐藏
+            dummy.position.copy(position);
+            dummy.rotation.copy(rotation);
+            dummy.scale.copy(visible ? scale : new THREE.Vector3(0, 0, 0));
+            dummy.updateMatrix();
+            this.instancedMesh.setMatrixAt(index, dummy.matrix);
+
+            // 颜色（如果提供了 color 字段）
+            if (value.color !== undefined) {
+                this.instancedMesh.setColorAt(index, new THREE.Color(value.color));
+            }
+        });
+        this.instancedMesh.instanceMatrix.needsUpdate = true;
+        if (this.instancedMesh.instanceColor) {
+            this.instancedMesh.instanceColor.needsUpdate = true;
+        }
+    }
+
+    /**
+     * 从缓存组合指定实例的完整变换矩阵并写回 GPU
+     */
+    private composeMatrix(key: string): void {
+        const index = this.keyMap.get(key);
+        const t = this.instanceTransforms.get(key);
+        if (index === undefined || !t) return;
+
+        const dummy = new THREE.Object3D();
+        dummy.position.copy(anyDataToVector3(t.position));
+        dummy.rotation.copy(anyDataToEuler(t.rotation));
+        // 不可见 → zero-scale
+        dummy.scale.copy(t.visible ? anyDataToVector3(t.scale) : new THREE.Vector3(0, 0, 0));
+        dummy.updateMatrix();
+        this.instancedMesh.setMatrixAt(index, dummy.matrix);
+        this.instancedMesh.instanceMatrix.needsUpdate = true;
+    }
+
+    /**
+     * 获取或创建某个 key 的变换缓存
+     * 新建时填充合理的默认值，确保所有 ModelBasisData 字段都有值
+     */
+    private getOrCreateTransform(key: string): InstanceTransform {
+        let t = this.instanceTransforms.get(key);
+        if (!t) {
+            t = {
+                id: key,
+                name: undefined,
+                status: undefined,
+                type: undefined,
+                description: undefined,
+                position: new xyz(),
+                rotation: new xyz(),
+                scale: new xyz(1,1,1),
+                visible: true,
+            };
+            this.instanceTransforms.set(key, t);
+        }
+        return t;
+    }
+
+    // ======================== 单实例更新 ========================
+
+    /**
+     * 更新某个实例的位置
+     * @param data { id, position }
+     */
+    updateOnePosition(data: any): this {
+        if (!data?.id || !data?.position) return this;
+        if (!this.keyMap.has(data.id)) return this;
+
+        const t = this.getOrCreateTransform(data.id);
+        t.position.copy(anyDataToVector3(data.position));
+        this.composeMatrix(data.id);
+        return this;
+    }
+
+    /**
+     * 更新某个实例的旋转
+     * @param data { id, rotation }
+     */
+    updateOneRotation(data: any): this {
+        if (!data?.id || !data?.rotation) return this;
+        if (!this.keyMap.has(data.id)) return this;
+
+        const t = this.getOrCreateTransform(data.id);
+        t.rotation.copy(anyDataToEuler(data.rotation));
+        this.composeMatrix(data.id);
+        return this;
+    }
+
+    /**
+     * 更新某个实例的缩放
+     * @param data { id, scale }
+     */
+    updateOneScale(data: any): this {
+        if (!data?.id || !data?.scale) return this;
+        if (!this.keyMap.has(data.id)) return this;
+
+        const t = this.getOrCreateTransform(data.id);
+        t.scale.copy(anyDataToVector3(data.scale));
+        this.composeMatrix(data.id);
+        return this;
+    }
+
+    /**
+     * 更新某个实例的可见性
+     * InstancedMesh 不支持逐实例 visible，通过 zero-scale 模拟隐藏
+     * @param data { id, visible }
+     */
+    updateOneVisible(data: any): this {
+        if (!data?.id || data.visible === undefined) return this;
+        if (!this.keyMap.has(data.id)) return this;
+
+        const t = this.getOrCreateTransform(data.id);
+        t.visible = !!data.visible;
+        this.composeMatrix(data.id);
+        return this;
+    }
+
+    /**
+     * 更新某个实例的颜色
+     * @param data { id, color } — color 可以是 THREE.Color、hex 数值或 css 字符串
+     */
+    updateOneColor(data: any): this {
+        if (!data?.id || data.color === undefined) return this;
+        const index = this.keyMap.get(data.id);
+        if (index === undefined) return this;
+
+        this.instancedMesh.setColorAt(index, new THREE.Color(data.color));
+        if (this.instancedMesh.instanceColor) {
+            this.instancedMesh.instanceColor.needsUpdate = true;
+        }
+        return this;
+    }
+
+    // ======================== 整体变换 ========================
+
+    /**
+     * 更新整个 InstancedMesh 的大小（不同于逐实例 scale）
+     */
+    updateSize(vector3: THREE.Vector3): this {
+        this.instancedMesh.scale.copy(vector3);
+        return this;
+    }
+
+    /**
+     * 更新整个 InstancedMesh 的位置
+     */
+    updatePosition(vector3: THREE.Vector3): this {
+        this.instancedMesh.position.copy(vector3);
+        return this;
+    }
+
+    /**
+     * 更新整个 InstancedMesh 的旋转
+     */
+    updateRotation(euler: THREE.Euler): this {
+        this.instancedMesh.rotation.copy(euler);
+        return this;
+    }
+
+    // ======================== 批量更新 ========================
+
+    /**
+     * 更新所有实例数据
+     * 当实例数量变化时会重建底层 InstancedMesh
+     */
+    updateAll(dataMap: Map<string, any>): this {
+        const oldCount = this.num;
+        this.refreshKeyMap(dataMap);
+
+        // 数量变化 → 重建 InstancedMesh（Three.js 不支持运行时改 count）
+        if (this.num !== oldCount) {
+            this.rebuildInstancedMesh();
+        }
+
+        this.instanceTransforms.clear();
+        this.initAllMatrices(dataMap);
+        return this;
+    }
+
+    /**
+     * 基于当前缓存刷新所有实例的矩阵
+     */
+    update(): this {
+        this.dataMap.forEach((_value, key) => {
+            this.composeMatrix(key);
+        });
+        this.instancedMesh.instanceMatrix.needsUpdate = true;
+        return this;
+    }
+
+    // ======================== 场景管理 ========================
+
+    /**
+     * 添加到场景中
+     */
+    addScene(scene: THREE.Scene): this {
+        scene.add(this.instancedMesh);
+        return this;
+    }
+
+    /**
+     * 从场景中移除
+     */
+    removeScene(scene: THREE.Scene): this {
+        scene.remove(this.instancedMesh);
+        return this;
+    }
+
+    // ======================== 生命周期 ========================
+
+    /**
+     * 释放所有 GPU 资源（几何体、材质）并清理映射
+     */
+    dispose(): void {
+        if (this.instancedMesh) {
+            // 从父级移除
+            if (this.instancedMesh.parent) {
+                this.instancedMesh.parent.remove(this.instancedMesh);
+            }
+            // 释放几何体
+            this.instancedMesh.geometry?.dispose();
+            // 释放材质
+            const mat = this.instancedMesh.material;
+            if (Array.isArray(mat)) {
+                mat.forEach(m => m.dispose());
+            } else {
+                mat?.dispose();
+            }
+        }
+        this.keyMap.clear();
+        this.dataMap.clear();
+        this.instanceTransforms.clear();
+    }
+
+    // ======================== 内部 ========================
+
+    /**
+     * 重建底层 InstancedMesh（数量变化时调用），保留整体变换与场景关系
+     */
+    private rebuildInstancedMesh(): void {
+        const oldMesh = this.instancedMesh;
+        const material = Array.isArray(oldMesh.material) ? oldMesh.material[0] : oldMesh.material;
+
+        this.instancedMesh = new THREE.InstancedMesh(this.geometry, material, this.num);
+        this.instancedMesh.position.copy(oldMesh.position);
+        this.instancedMesh.rotation.copy(oldMesh.rotation);
+        this.instancedMesh.scale.copy(oldMesh.scale);
+
+        // 有父级则替换引用
+        if (oldMesh.parent) {
+            oldMesh.parent.add(this.instancedMesh);
+            oldMesh.parent.remove(oldMesh);
+        }
+        oldMesh.dispose();
+    }
+}

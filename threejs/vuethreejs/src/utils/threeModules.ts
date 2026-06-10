@@ -230,4 +230,90 @@ export const anyDataToEuler = (data: any): THREE.Euler => {
     }
 }
 
+/**
+ * 模型基础数据接口
+ * 用于描述从 API 传入的单个模型实例的完整数据结构
+ */
+export interface ModelBasisData {
+    /** 实例唯一标识 */
+    id?: string;
+    /** 实例名称 */
+    name?: string;
+    /** 状态（如 'normal' 表示可见） */
+    status?: string;
+    /** 类型标识 */
+    type?: string;
+    /** 描述文本 */
+    description?: string;
+    /** 位置（支持 {x,y,z} 对象 / THREE.Vector3） */
+    position?: xyz;
+    /** 旋转（支持 {x,y,z,order?} 对象 / THREE.Euler） */
+    rotation?: xyz;
+    /** 缩放（支持 {x,y,z} 对象 / THREE.Vector3） */
+    scale?: xyz;
+    /** 可见性 */
+    visible?: boolean;
+    /** 颜色（支持 hex 数值 / css 字符串 / THREE.Color） */
+    color?: number | string;
+}
+
+/**
+ * 三维坐标值对象
+ * 与 THREE.Vector3 / THREE.Euler 结构兼容，可直接互相赋值
+ */
+export class xyz {
+    x: number;
+    y: number;
+    z: number;
+
+    constructor(x: number = 0, y: number = 0, z: number = 0) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    /**
+     * 从任意具有 x/y/z 属性的对象复制值
+     * @returns this 支持链式调用
+     */
+    copy(val: THREE.Vector3 | THREE.Euler | xyz | { x: number; y: number; z: number }): this {
+        this.x = val.x;
+        this.y = val.y;
+        this.z = val.z;
+        return this;
+    }
+
+    /**
+     * 直接设置三个分量
+     * @returns this 支持链式调用
+     */
+    set(x: number, y: number, z: number): this {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        return this;
+    }
+
+    /**
+     * 深拷贝
+     */
+    clone(): xyz {
+        return new xyz(this.x, this.y, this.z);
+    }
+
+    /**
+     * 转为 THREE.Vector3
+     */
+    toVector3(): THREE.Vector3 {
+        return new THREE.Vector3(this.x, this.y, this.z);
+    }
+
+    /**
+     * 转为 THREE.Euler（默认 order 为 'YXZ'）
+     */
+    toEuler(order: string = 'YXZ'): THREE.Euler {
+        return new THREE.Euler(this.x, this.y, this.z, order);
+    }
+}
+
 

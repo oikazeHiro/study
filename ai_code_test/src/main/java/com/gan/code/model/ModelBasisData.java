@@ -14,4 +14,5 @@ public class ModelBasisData {
     private TernaryNumber scale;
     private TernaryNumber rotation;
     private String status;
+    private boolean visible;
 }

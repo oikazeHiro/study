@@ -34,62 +34,7 @@ export default class ModsMethodStandard {
      * 模型配置数组
      * 定义需要加载的模型信息
      */
-    modelConfigs: Array<ModelConfig> = [
-        {
-            isNeedLoaded: true,
-            lowModelPath: "/models/ship/sanHuoShip.glb",
-            mediumModelPath: "/models/ship/sanHuoShip.glb",
-            highModelPath: "/models/ship/sanHuoShip.glb",
-            path: '',
-            key: "sanHuoShip",
-            name: "散货船",
-        },
-        // {
-        //     isNeedLoaded: true,
-        //     lowModelPath: "/models/car/car.glb",
-        //     mediumModelPath: "/models/car/car.glb",
-        //     highModelPath: "/models/car/car.glb",
-        //     path: '',
-        //     key: "car",
-        //     name: "车",
-        // },
-        // {
-        //     isNeedLoaded: true,
-        //     lowModelPath: "/models/ground/ground1.glb",
-        //     mediumModelPath: "/models/ground/ground1.glb",
-        //     highModelPath: "/models/ground/ground1.glb",
-        //     path: '',
-        //     key: "ground",
-        //     name: "地面",
-        // },
-        // {
-        //     isNeedLoaded: true,
-        //     lowModelPath: "/models/machine/anQiao.glb",
-        //     mediumModelPath: "/models/machine/anQiao.glb",
-        //     highModelPath: "/models/machine/anQiao.glb",
-        //     path: '',
-        //     key: "anQiao",
-        //     name: "岸桥",
-        // },
-        // {
-        //     isNeedLoaded: true,
-        //     lowModelPath: "/models/machine/ChangQiao.glb",
-        //     mediumModelPath: "/models/machine/ChangQiao.glb",
-        //     highModelPath: "/models/machine/ChangQiao.glb",
-        //     path: '',
-        //     key: "changQiao",
-        //     name: "场桥",
-        // },
-        // {
-        //     isNeedLoaded: true,
-        //     lowModelPath: "/models/machine/container.glb",
-        //     mediumModelPath: "/models/machine/container.glb",
-        //     highModelPath: "/models/machine/container.glb",
-        //     path: '',
-        //     key: "container",
-        //     name: "集装箱",
-        // },
-    ];
+    modelConfigs: Array<ModelConfig> = [];
 
     constructor() {
         // 构造函数，暂无初始化逻辑
