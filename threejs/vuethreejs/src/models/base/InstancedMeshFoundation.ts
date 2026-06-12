@@ -11,6 +11,9 @@ interface InstanceTransform extends ModelBasisData {
     visible: boolean;
 }
 
+/**
+ * 数量巨大 且模型和材质 比较单一的模型实例缓存，用于提升性能
+ */
 export class InstancedMeshFoundation {
     /** 实例数据映射，value 结构参见 ModelBasisData */
     dataMap: Map<string, any>;
@@ -21,6 +24,8 @@ export class InstancedMeshFoundation {
     keyMap: Map<string, number>;
     /** 每个实例的完整变换缓存，key 同 dataMap */
     private instanceTransforms: Map<string, InstanceTransform>;
+
+    type: string;
 
     constructor() {
         this.dataMap = new Map();
@@ -34,8 +39,10 @@ export class InstancedMeshFoundation {
      * @param geometry 共享几何体
      * @param material 共享材质（需支持 instancing）
      * @param dataMap 实例数据，每项可含 position/rotation/scale/visible/color
+     * @param type 类型
      */
-    init(geometry: THREE.BufferGeometry, material: THREE.Material, dataMap: Map<string, any>): this {
+    init(geometry: THREE.BufferGeometry, material: THREE.Material, dataMap: Map<string, any>, type: string): this {
+        this.type = type;
         this.geometry = geometry;
         this.dataMap = dataMap;
         this.refreshKeyMap(dataMap);

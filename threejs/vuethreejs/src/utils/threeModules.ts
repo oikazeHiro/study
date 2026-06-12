@@ -12,13 +12,14 @@ import {OutlinePass} from 'three/addons/postprocessing/OutlinePass.js';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {CSS2DObject, CSS2DRenderer} from 'three/addons/renderers/CSS2DRenderer.js';
+// @ts-ignore: ammo.js 无官方类型声明
 import Ammo from "ammo.js";
 import Stats from 'three/addons/libs/stats.module.js'
 import {oscSine, pass, time, uniform} from 'three/tsl';
 import {outline} from 'three/addons/tsl/display/OutlineNode.js';
 import type {Vec3} from 'cannon';
 import * as CANNON from 'cannon';
-// examples/jsm/libs/tween.module.js"
+// @ts-ignore  examples/jsm/libs/tween.module.js" three js 拓展
 import * as TWEEN from "three/examples/jsm/libs/tween.module.js";
 import {Earcut} from 'three/src/extras/Earcut';
 
@@ -311,7 +312,7 @@ export class xyz {
     /**
      * 转为 THREE.Euler（默认 order 为 'YXZ'）
      */
-    toEuler(order: string = 'YXZ'): THREE.Euler {
+    toEuler(order: THREE.EulerOrder = 'YXZ'): THREE.Euler {
         return new THREE.Euler(this.x, this.y, this.z, order);
     }
 }

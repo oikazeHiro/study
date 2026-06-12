@@ -26,6 +26,9 @@ interface InstanceTransform extends ModelBasisData {
     visible: boolean;
 }
 
+/**
+ * 数量大但模型复制且材质多的模型
+ */
 export class BatchedMeshFoundation {
     /** 实例数据映射，key → data */
     dataMap: Map<string, any>;
@@ -41,6 +44,8 @@ export class BatchedMeshFoundation {
     private instanceGeometryMap: Map<number, number>;
     /** 每个实例的变换缓存，key 同 dataMap */
     private instanceTransforms: Map<string, InstanceTransform>;
+
+    type: string;
 
     constructor() {
         this.dataMap = new Map();
@@ -70,6 +75,7 @@ export class BatchedMeshFoundation {
      * @param dataMap         实例数据，每项可含：
      *                          - geometryId  指定使用哪个几何体（不填则用第一个）
      *                          - position / rotation / scale / visible / color （同 InstancedMeshFoundation）
+     * @param type 类型
      */
     init(
         maxInstanceCount: number,
@@ -78,13 +84,18 @@ export class BatchedMeshFoundation {
         material: THREE.Material | THREE.Material[],
         geometries: GeometryConfig[],
         dataMap: Map<string, any>,
+        type: string,
     ): this {
+        this.type = type;
         if (geometries.length === 0) {
             throw new Error('BatchedMeshFoundation.init: geometries 不能为空');
         }
-
         this.dataMap = dataMap;
-        this.batchedMesh = new THREE.BatchedMesh(maxInstanceCount, maxVertexCount, maxIndexCount, material);
+        // @types/three 声明只接受 Material，但运行时 BatchedMesh extends Mesh 实际支持 Material | Material[]
+        this.batchedMesh = new THREE.BatchedMesh(
+            maxInstanceCount, maxVertexCount, maxIndexCount, material as THREE.Material
+        );
+
 
         // 注册所有几何体
         this.geometryMap.clear();
