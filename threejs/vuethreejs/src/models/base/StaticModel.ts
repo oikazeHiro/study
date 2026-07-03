@@ -1,9 +1,9 @@
 import {THREE} from "@/utils/threeModules";
 
 export default class StaticModel {
-    id: string
-    name: string
-    model: THREE.Object3D
+    id: string = ''
+    name: string = ''
+    model: THREE.Object3D = new THREE.Object3D()
     scene: THREE.Scene
     renderer: THREE.WebGLRenderer
 
@@ -19,7 +19,7 @@ export default class StaticModel {
     }
 
     dispose(){
-        if (this.model) {
+        if (this.model && this.model.parent) {
             // 递归遍历模型中的所有对象，调用dispose方法
             this.model.traverse((object) => {
                 if (object instanceof THREE.Mesh) {

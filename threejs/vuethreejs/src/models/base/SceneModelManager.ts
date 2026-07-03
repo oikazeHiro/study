@@ -11,29 +11,54 @@ import CarModel from "@/models/loaderModel/CarModel";
 import GroundModel from "@/models/loaderModel/GroundModel";
 import ContainerModel from "@/models/loaderModel/ContainerModel";
 
+export interface SceneData {
+    [modelKey: string]: {
+        [instanceKey: string]: {
+            position?: { x: number; y: number; z: number };
+            rotation?: { x: number; y: number; z: number; order?: string };
+            scale?: { x: number; y: number; z: number };
+            status?: string;
+        }
+    }
+}
 
 export default class SceneModelManager {
 
     scene: THREE.Scene = new THREE.Scene();
     renderer: THREE.WebGLRenderer = new THREE.WebGLRenderer({
         antialias: true,
-        alpha: true // 透明背景
+        alpha: true
     });
     camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     controls: OrbitControls = new OrbitControls(this.camera, this.renderer.domElement);
-    // 静态模型 地形之类的不会改变的模型
     staticModels: Map<string, StaticModel> = new Map();
     modsMethodStandardMap: Map<string, ModsMethodStandard> = new Map();
     modelStandardLoader: ModelStandardLoader = new ModelStandardLoader();
     stats: Stats = new Stats()
 
-    data: any = {};
+    data: SceneData = {};
+
+    private static modelFactories: Map<string, new () => ModsMethodStandard> = new Map();
 
     private animationId: number | null = null;
 
     onProgressCallback?: (progress: number) => void;
 
+    static registerModel(key: string, ctor: new () => ModsMethodStandard): void {
+        SceneModelManager.modelFactories.set(key, ctor);
+    }
+
     constructor() {
+        this.registerDefaultModels();
+    }
+
+    private registerDefaultModels(): void {
+        if (SceneModelManager.modelFactories.size === 0) {
+            SceneModelManager.registerModel('sanHuoShip', SanHuoShipModel);
+            SceneModelManager.registerModel('car', CarModel);
+            SceneModelManager.registerModel('groud', GroundModel);
+            SceneModelManager.registerModel('container', ContainerModel);
+        }
     }
 
     init(): Promise<void> {
@@ -45,18 +70,16 @@ export default class SceneModelManager {
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
         directionalLight.position.set(50, 100, 70);
         this.scene.add(directionalLight);
-        // 辅助工具
         this.scene.add(new THREE.AxesHelper(10));
-        // 返回 Promise，让调用方可以等待
         return this.modelStandardLoader.initialize().then(() => {
             this.loaderModsMethodStandard();
             this.startAnimationLoop();
-            this.initStaticeModels();
+            this.initStaticModels();
         });
     }
 
 
-    initStaticeModels() {
+    initStaticModels() {
         const mySky = new MySky(this.scene, this.renderer);
         this.staticModels.set('sky', mySky);
         const mySea = new MySea(this.scene, this.renderer);
@@ -66,13 +89,11 @@ export default class SceneModelManager {
     startAnimationLoop(): void {
         const animate = () => {
             this.animationId = requestAnimationFrame(animate);
-            // 更新控制器
             this.controls.update();
             this.staticModels.forEach((value) => {
                 value.animate();
             })
             this.stats.update()
-            // 渲染场景
             this.renderer.render(this.scene, this.camera);
         };
         animate();
@@ -85,75 +106,55 @@ export default class SceneModelManager {
         })
     }
 
-
-    /**
-     * 设置加载进度回调函数
-     * @param callback 加载进度回调加载进度百分比
-     */
     setOnProgressCallback(callback: (progress: number) => void): void {
         this.onProgressCallback = callback;
     }
 
 
     addModsMethodStandardByKey(key: string): void {
-        switch (key) {
-            case 'sanHuoShip':
-                let sanHuoShipModel = new SanHuoShipModel();
-                sanHuoShipModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
-                this.modsMethodStandardMap.set(key, sanHuoShipModel);
-                break;
-            case 'car':
-                let carModel = new CarModel();
-                carModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
-                this.modsMethodStandardMap.set(key, carModel);
-                break;
-            case 'groud':
-                let groudModel = new GroundModel();
-                groudModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
-                this.modsMethodStandardMap.set(key, groudModel);
-                break;
-            case 'container':
-                let containerModel = new ContainerModel();
-                containerModel.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
-                this.modsMethodStandardMap.set(key, containerModel);
-                break;
-            default:
-                let modsMethodStandard = new ModsMethodStandardImpl();
-                modsMethodStandard.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
-                this.modsMethodStandardMap.set(key, modsMethodStandard);
-                break;
+        const Ctor = SceneModelManager.modelFactories.get(key);
+        let model: ModsMethodStandard;
+        if (Ctor) {
+            model = new Ctor();
+        } else {
+            model = new ModsMethodStandardImpl();
         }
+        model.setAnimationClips(this.modelStandardLoader.getAnimations(key) ?? []);
+        this.modsMethodStandardMap.set(key, model);
     }
 
-    addLoaderSceneByData(data: any): void {
+    addLoaderSceneByData(data: SceneData): void {
         merge(this.data, data)
         let modelKeys = this.modelStandardLoader.getLoadedModelKeys();
         modelKeys.forEach((key) => {
             const model = this.modelStandardLoader.getModel(key);
-            const newLocal = data[key];
-            if (model && newLocal) {
-                const mapData = new Map<string, any>(Object.entries(newLocal));
+            const modelData = data[key];
+            if (model && modelData) {
+                const mapData = new Map<string, any>(Object.entries(modelData));
                 this.modsMethodStandardMap.get(key)?.init(key, mapData, model)
                     .addScene(this.scene);
             }
         })
     }
 
-    updateLoaderSceneByData(data: any): void {
+    updateLoaderSceneByData(data: SceneData): void {
         merge(this.data, data)
         let modelKeys = this.modelStandardLoader.getLoadedModelKeys();
         modelKeys.forEach((key) => {
-            const newLocal = data[key];
-            if (newLocal) {
-                const mapData = new Map<string, any>(Object.entries(newLocal));
+            const modelData = data[key];
+            if (modelData) {
+                const mapData = new Map<string, any>(Object.entries(modelData));
                 this.modsMethodStandardMap.get(key)?.updateAll(mapData);
             }
         })
     }
 
 
-    // 销毁全部
     disposeAll(): void {
+        if (this.animationId !== null) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
         this.modsMethodStandardMap.forEach((value) => {
             value.disposeAll();
         })

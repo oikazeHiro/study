@@ -18,7 +18,7 @@ interface ModelConfig {
  * 模型加载器标准类
  * 负责管理3D模型的加载、存储和进度跟踪
  */
-export default class ModsMethodStandard {
+export default class ModelStandardLoader {
     // 存储已加载的模型对象，key为模型标识，value为THREE.Object3D对象
     loadedModels: Map<string, THREE.Object3D> = new Map();
     // 存储已加载的动画剪辑，key为模型标识，value为动画剪辑数组
@@ -73,27 +73,25 @@ export default class ModsMethodStandard {
      * @returns Promise<void>
      */
     async loadAllModels(): Promise<void> {
-        // 筛选出需要加载的模型配置
         const needLoadConfigs = this.modelConfigs.filter(config => config.isNeedLoaded);
         const totalModels = needLoadConfigs.length;
 
-        // 如果没有需要加载的模型，直接设置进度为100%
         if (totalModels === 0) {
             this.updateProgress(100);
             return;
         }
 
-        // 遍历所有需要加载的模型配置
-        for (let i = 0; i < needLoadConfigs.length; i++) {
-            const config = needLoadConfigs[i];
-
-            // 根据文件类型加载模型
-            await this.loadModelByType(config);
-
-            // 更新进度：已完成的模型数量 / 总模型数量 * 100
-            const progress = Math.round((i + 1) / totalModels * 100);
+        const loadOne = async (config: ModelConfig, index: number): Promise<void> => {
+            try {
+                await this.loadModelByType(config);
+            } catch (error) {
+                console.error(`模型 ${config.key} 加载失败，跳过:`, error);
+            }
+            const progress = Math.round((index + 1) / totalModels * 100);
             this.updateProgress(progress);
-        }
+        };
+
+        await Promise.all(needLoadConfigs.map((config, i) => loadOne(config, i)));
     }
 
     /**
@@ -151,7 +149,7 @@ export default class ModsMethodStandard {
      * @returns Promise<void>
      */
     private async loadGLTFModel(config: ModelConfig): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise<void>((resolve, reject) => {
             const loader = new GLTFLoader();
 
             // 使用Three.js的GLTFLoader加载模型
@@ -179,7 +177,7 @@ export default class ModsMethodStandard {
                 // 加载失败回调
                 (error) => {
                     console.error(`加载GLTF模型失败: ${config.key}`, error);
-                    resolve(); // 即使失败也继续，保证Promise能够resolve
+                    reject(error);
                 }
             );
         });
@@ -191,7 +189,7 @@ export default class ModsMethodStandard {
      * @returns Promise<void>
      */
     private async loadFBXModel(config: ModelConfig): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise<void>((resolve, reject) => {
             const loader = new FBXLoader();
 
             loader.load(
@@ -210,7 +208,7 @@ export default class ModsMethodStandard {
                 },
                 (error) => {
                     console.error(`加载FBX模型失败: ${config.key}`, error);
-                    resolve(); // 即使失败也继续，保证Promise能够resolve
+                    reject(error);
                 }
             );
         });
@@ -223,7 +221,7 @@ export default class ModsMethodStandard {
      * @returns Promise<void>
      */
     private async loadOBJModel(config: ModelConfig): Promise<void> {
-        return new Promise((resolve) => {
+        return new Promise<void>((resolve, reject) => {
             const loader = new OBJLoader();
 
             loader.load(
@@ -242,7 +240,7 @@ export default class ModsMethodStandard {
                 },
                 (error) => {
                     console.error(`加载OBJ模型失败: ${config.key}`, error);
-                    resolve(); // 即使失败也继续，保证Promise能够resolve
+                    reject(error);
                 }
             );
         });

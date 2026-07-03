@@ -1,5 +1,3 @@
-import {getStaticUrl} from '~/utils/util'
-
 const routerData = [
     {
         path: 'first', // 子路由 path 不加斜杠

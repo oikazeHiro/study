@@ -89,22 +89,20 @@ service.interceptors.response.use(
 // 扩展 axios 实例
 const request = {
     get<T = any>(url: string, params?: any, options?: RequestOptions): Promise<T> {
-        return service.get(url, { params, ...options })
+        return service.get(url, { params, ...options }) as Promise<T>
     },
 
     post<T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-        return service.post(url, data, options)
+        return service.post(url, data, options) as Promise<T>
     },
 
     put<T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-        return service.put(url, data, options)
+        return service.put(url, data, options) as Promise<T>
     },
 
     delete<T = any>(url: string, params?: any, options?: RequestOptions): Promise<T> {
-        return service.delete(url, { params, ...options })
+        return service.delete(url, { params, ...options }) as Promise<T>
     },
-
-    // 其他方法...
 }
 
 export default request

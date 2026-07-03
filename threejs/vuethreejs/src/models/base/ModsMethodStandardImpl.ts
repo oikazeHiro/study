@@ -62,7 +62,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
     }
 
     getAnimationActions(): Array<THREE.AnimationAction> {
-        return [];
+        return this.AnimationActions;
     }
 
     updateAll(dataMap: Map<string, any>): this {
@@ -72,12 +72,12 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
 
     updateData(dataMap: Map<string, any>): this {
         dataMap.forEach((value, key) => {
-            const data = dataMap.get(key);
-            if (!data) {
+            if (!this.dataMap.has(key)) {
                 this.addModel(this.primitiveModel, value, key);
             } else {
+                const existing = this.dataMap.get(key);
                 this.dataMap.set(key, {
-                    ...data,
+                    ...existing,
                     ...value
                 });
                 this.setPosition(key, anyDataToVector3(value.position));
@@ -114,10 +114,12 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
     }
 
     setAnimation(name: string, animationName: string, loop: boolean): this {
+        if (this.animationClips.length === 0) return this;
         return this;
     }
 
     modelMove(name: string, modelMove: ModelMove[]): any {
+        console.warn('modelMove not implemented in ModsMethodStandardImpl');
     }
 
     getMaterial(modelName: string, materialName: string): THREE.Material[] {
@@ -151,7 +153,11 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
             model.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
                     child.geometry.dispose();
-                    child.material.dispose();
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(material => material.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
                 }
             });
             this.group.remove(model);
@@ -160,10 +166,14 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
 
     disposeAll(): void {
         this.dataMap.clear();
-        this.group.children.forEach((child) => {
+        this.group.traverse((child) => {
             if (child instanceof THREE.Mesh) {
                 child.geometry.dispose();
-                child.material.dispose();
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => material.dispose());
+                } else {
+                    child.material.dispose();
+                }
             }
         });
         console.log(this.key + ": 资源已清理")

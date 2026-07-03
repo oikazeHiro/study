@@ -5,18 +5,9 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {FBXLoader} from 'three/addons/loaders/FBXLoader.js';
 import {OBJLoader} from "three/addons/loaders/OBJLoader.js";
-import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
-import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
-import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
-import {OutlinePass} from 'three/addons/postprocessing/OutlinePass.js';
 import {Water} from 'three/addons/objects/Water.js';
 import {Sky} from 'three/addons/objects/Sky.js';
-import {CSS2DObject, CSS2DRenderer} from 'three/addons/renderers/CSS2DRenderer.js';
-// @ts-ignore: ammo.js 无官方类型声明
-import Ammo from "ammo.js";
 import Stats from 'three/addons/libs/stats.module.js'
-import {oscSine, pass, time, uniform} from 'three/tsl';
-import {outline} from 'three/addons/tsl/display/OutlineNode.js';
 import type {Vec3} from 'cannon';
 import * as CANNON from 'cannon';
 // @ts-ignore  examples/jsm/libs/tween.module.js" three js 拓展
@@ -33,23 +24,10 @@ export {
     GLTFLoader,
     FBXLoader,
     OBJLoader,
-    EffectComposer,
-    RenderPass,
-    UnrealBloomPass,
-    OutlinePass,
     Stats,
     CANNON,
-    // 其他导出的模块...
     Water,
     Sky,
-    Ammo,
-    pass,
-    uniform,
-    time,
-    oscSine,
-    outline,
-    CSS2DRenderer,
-    CSS2DObject,
     Earcut,
 };
 
@@ -62,7 +40,6 @@ export type {
     MeshBasicMaterial,
     AxesHelper,
     Color,
-    ColorRepresentation,
     Object3D,
     Vector3,
     Vector2,
