@@ -1,5 +1,6 @@
 import { THREE } from '@/utils/threeModules'
 import { InstancedMeshFoundation } from './InstancedMeshFoundation'
+import { ModelInstanceData } from "@/models/base/ManagedModel";
 
 /**
  * 纹理图集配置
@@ -203,15 +204,6 @@ export class AtlasInstancedMeshFoundation extends InstancedMeshFoundation {
         }
     }
 
-    /**
-     * 计算大于等于 n 的最小 2 的幂
-     */
-    private nextPowerOfTwo(n: number): number {
-        let p = 1
-        while (p < n) p *= 2
-        return p
-    }
-
     // ======================== 自定义 Shader 材质 ========================
 
     /**
@@ -354,7 +346,7 @@ export class AtlasInstancedMeshFoundation extends InstancedMeshFoundation {
     /**
      * 覆盖 updateAll：父类重建 InstancedMesh 后，重新写入 tileIndex 属性。
      */
-    updateAll(dataMap: Map<string, any>): this {
+    updateAll(dataMap: Map<string, ModelInstanceData>): this {
         super.updateAll(dataMap)
         // super.updateAll 可能因数量变化而重建 InstancedMesh（rebuildInstancedMesh），
         // 新 mesh 的 geometry 上没有 instanceTileIndex 属性，需要重新写入

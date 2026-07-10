@@ -1,8 +1,9 @@
 import { anyDataToEuler, anyDataToVector3, THREE } from '@/utils/threeModules'
 import ModelMove from "@/models/utils/modelMove";
 import ModsMethodStandard from "@/models/base/ModsMethodStandard";
+import { ManagedModel, ModelInstanceData } from "@/models/base/ManagedModel";
 
-export default class ModsMethodStandardImpl implements ModsMethodStandard {
+export default class ModsMethodStandardImpl implements ModsMethodStandard, ManagedModel {
     AnimationActions: Array<THREE.AnimationAction>;
     dataMap: Map<string, any>;
     primitiveModel: THREE.Object3D;
@@ -44,7 +45,12 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
             console.log("scale",key, value.scale, newLocal);
             model.scale.copy(newLocal);
         }
-        model.visible = value?.status === 'normal';
+        // visible 优先于 status
+        if (value.visible !== undefined) {
+            model.visible = !!value.visible;
+        } else {
+            model.visible = value?.status === 'normal';
+        }
         model.uuid = this.key+ "_" + key;
         model.name = model.uuid;
         this.group.add(model);
@@ -65,7 +71,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
         return this.AnimationActions;
     }
 
-    updateAll(dataMap: Map<string, any>): this {
+    updateAll(dataMap: Map<string, ModelInstanceData>): this {
         this.updateData(dataMap);
         return this;
     }
@@ -80,10 +86,15 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
                     ...existing,
                     ...value
                 });
-                this.setPosition(key, anyDataToVector3(value.position));
-                this.setRotation(key, anyDataToEuler(value.rotation));
-                this.setScale(key, anyDataToVector3(value.scale));
-                this.setVisible(key, value?.status === 'normal');
+                if (value.position) this.setPosition(key, anyDataToVector3(value.position));
+                if (value.rotation) this.setRotation(key, anyDataToEuler(value.rotation));
+                if (value.scale) this.setScale(key, anyDataToVector3(value.scale));
+                // visible 优先于 status
+                if (value.visible !== undefined) {
+                    this.setVisible(key, !!value.visible);
+                } else if (value.status !== undefined) {
+                    this.setVisible(key, value.status === 'normal');
+                }
             }
 
         })
@@ -109,6 +120,23 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard {
         const objectByName = this.group.getObjectByName(name);
         if (objectByName) {
             objectByName.visible = visible;
+        }
+        return this;
+    }
+
+    setColor(name: string, color: THREE.Color): this {
+        const model = this.group.getObjectByName(name);
+        if (model) {
+            model.traverse((child) => {
+                if (child instanceof THREE.Mesh) {
+                    const mat = child.material;
+                    if (Array.isArray(mat)) {
+                        mat.forEach(m => { if (m.color) m.color.copy(color); });
+                    } else if (mat.color) {
+                        mat.color.copy(color);
+                    }
+                }
+            });
         }
         return this;
     }

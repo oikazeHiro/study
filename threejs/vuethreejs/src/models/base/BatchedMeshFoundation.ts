@@ -1,4 +1,5 @@
 import {THREE, anyDataToVector3, anyDataToEuler, ModelBasisData, xyz} from '@/utils/threeModules'
+import { ManagedModel, ModelInstanceData } from "@/models/base/ManagedModel";
 
 /**
  * 几何体配置
@@ -29,7 +30,7 @@ interface InstanceTransform extends ModelBasisData {
 /**
  * 数量大但模型复制且材质多的模型
  */
-export class BatchedMeshFoundation {
+export class BatchedMeshFoundation implements ManagedModel {
     /** 实例数据映射，key → data */
     dataMap: Map<string, any>;
     /** BatchedMesh 实例 */
@@ -359,6 +360,28 @@ export class BatchedMeshFoundation {
         return this;
     }
 
+    // ======================== ManagedModel 统一接口 ========================
+
+    setPosition(name: string, position: THREE.Vector3): this {
+        return this.updateOnePosition({ id: name, position });
+    }
+
+    setRotation(name: string, rotation: THREE.Euler): this {
+        return this.updateOneRotation({ id: name, rotation });
+    }
+
+    setScale(name: string, scale: THREE.Vector3): this {
+        return this.updateOneScale({ id: name, scale });
+    }
+
+    setVisible(name: string, visible: boolean): this {
+        return this.updateOneVisible({ id: name, visible });
+    }
+
+    setColor(name: string, color: THREE.Color): this {
+        return this.updateOneColor({ id: name, color });
+    }
+
     // ======================== 动态增删实例 ========================
 
     /**
@@ -432,7 +455,7 @@ export class BatchedMeshFoundation {
      * 全量更新：diff 新旧 dataMap，增量增删 + 更新已有实例
      * 比 InstancedMeshFoundation.updateAll 高效——无需重建
      */
-    updateAll(dataMap: Map<string, any>): this {
+    updateAll(dataMap: Map<string, ModelInstanceData>): this {
         const newKeys = new Set(dataMap.keys());
         const oldKeys = new Set(this.dataMap.keys());
 
@@ -485,6 +508,10 @@ export class BatchedMeshFoundation {
             this.composeMatrix(key);
         });
         return this;
+    }
+
+    disposeAll(): void {
+        this.dispose();
     }
 
     // ======================== 场景管理 ========================

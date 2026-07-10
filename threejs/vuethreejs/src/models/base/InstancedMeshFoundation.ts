@@ -1,4 +1,5 @@
 import {THREE, anyDataToVector3, anyDataToEuler, ModelBasisData, xyz} from '@/utils/threeModules'
+import { ManagedModel, ModelInstanceData } from "@/models/base/ManagedModel";
 
 /**
  * 单个实例的完整变换缓存
@@ -14,13 +15,16 @@ interface InstanceTransform extends ModelBasisData {
 /**
  * 数量巨大 且模型和材质 比较单一的模型实例缓存，用于提升性能
  */
-export class InstancedMeshFoundation {
+export class InstancedMeshFoundation implements ManagedModel {
     /** 实例数据映射，value 结构参见 ModelBasisData */
     dataMap: Map<string, any>;
+    /** 当前活跃实例数（等于 dataMap.size） */
     num: number;
+    /** GPU 预分配容量（=2^k ≥ num），避免频繁重建 InstancedMesh */
+    maxCount: number;
     instancedMesh!: THREE.InstancedMesh;
     geometry!: THREE.BufferGeometry;
-    /** data key → instancedMesh 中的索引 */
+    /** data key → instancedMesh 中的索引（首次分配后稳定不变，除非扩容） */
     keyMap: Map<string, number>;
     /** 每个实例的完整变换缓存，key 同 dataMap */
     private instanceTransforms: Map<string, InstanceTransform>;
@@ -30,6 +34,7 @@ export class InstancedMeshFoundation {
     constructor() {
         this.dataMap = new Map();
         this.num = 0;
+        this.maxCount = 0;
         this.keyMap = new Map();
         this.instanceTransforms = new Map();
     }
@@ -40,13 +45,17 @@ export class InstancedMeshFoundation {
      * @param material 共享材质（需支持 instancing）
      * @param dataMap 实例数据，每项可含 position/rotation/scale/visible/color
      * @param type 类型
+     * @param maxCount GPU 预分配容量（不传则自动向上取 2 的幂）
      */
-    init(geometry: THREE.BufferGeometry, material: THREE.Material, dataMap: Map<string, any>, type: string): this {
+    init(geometry: THREE.BufferGeometry, material: THREE.Material, dataMap: Map<string, any>, type: string, maxCount?: number): this {
         this.type = type;
         this.geometry = geometry;
         this.dataMap = dataMap;
+        this.num = dataMap.size;
+        this.maxCount = maxCount ?? this.nextPowerOfTwo(this.num || 1);
+        this.instancedMesh = new THREE.InstancedMesh(geometry, material, this.maxCount);
+        this.instancedMesh.count = this.num;
         this.refreshKeyMap(dataMap);
-        this.instancedMesh = new THREE.InstancedMesh(geometry, material, this.num);
         this.instanceTransforms.clear();
         this.initAllMatrices(dataMap);
         return this;
@@ -55,10 +64,9 @@ export class InstancedMeshFoundation {
     // ======================== 内部工具 ========================
 
     /**
-     * 根据 dataMap 重建 key→index 映射
+     * 根据 dataMap 重建 key→index 映射（索引从 0 连续编号）
      */
     private refreshKeyMap(dataMap: Map<string, any>): void {
-        this.num = dataMap.size;
         this.keyMap.clear();
         let i = 0;
         dataMap.forEach((_value, key) => {
@@ -254,21 +262,50 @@ export class InstancedMeshFoundation {
         return this;
     }
 
+    // ======================== ManagedModel 统一接口 ========================
+
+    setPosition(name: string, position: THREE.Vector3): this {
+        return this.updateOnePosition({ id: name, position });
+    }
+
+    setRotation(name: string, rotation: THREE.Euler): this {
+        return this.updateOneRotation({ id: name, rotation });
+    }
+
+    setScale(name: string, scale: THREE.Vector3): this {
+        return this.updateOneScale({ id: name, scale });
+    }
+
+    setVisible(name: string, visible: boolean): this {
+        return this.updateOneVisible({ id: name, visible });
+    }
+
+    setColor(name: string, color: THREE.Color): this {
+        return this.updateOneColor({ id: name, color });
+    }
+
     // ======================== 批量更新 ========================
 
     /**
-     * 更新所有实例数据
-     * 当实例数量变化时会重建底层 InstancedMesh
+     * 更新所有实例数据。
+     *
+     * - 新数量 ≤ maxCount：直接复用 GPU 缓冲区，仅调整 instancedMesh.count 并重写矩阵
+     * - 新数量 > maxCount：扩容（按 2 的幂增长），重建 InstancedMesh
+     *
+     * keyMap 中的索引在非扩容场景下保持稳定，不漂移。
      */
-    updateAll(dataMap: Map<string, any>): this {
-        const oldCount = this.num;
-        this.refreshKeyMap(dataMap);
+    updateAll(dataMap: Map<string, ModelInstanceData>): this {
+        const newCount = dataMap.size;
 
-        // 数量变化 → 重建 InstancedMesh（Three.js 不支持运行时改 count）
-        if (this.num !== oldCount) {
+        // 超出预分配容量 → 扩容重建
+        if (newCount > this.maxCount) {
+            this.maxCount = this.nextPowerOfTwo(newCount);
             this.rebuildInstancedMesh();
         }
 
+        this.num = newCount;
+        this.instancedMesh.count = this.num;
+        this.refreshKeyMap(dataMap);
         this.instanceTransforms.clear();
         this.initAllMatrices(dataMap);
         return this;
@@ -329,19 +366,24 @@ export class InstancedMeshFoundation {
         this.instanceTransforms.clear();
     }
 
+    disposeAll(): void {
+        this.dispose();
+    }
+
     // ======================== 内部 ========================
 
     /**
-     * 重建底层 InstancedMesh（数量变化时调用），保留整体变换与场景关系
+     * 重建底层 InstancedMesh（扩容时调用），保留整体变换与场景关系
      */
     private rebuildInstancedMesh(): void {
         const oldMesh = this.instancedMesh;
         const material = Array.isArray(oldMesh.material) ? oldMesh.material[0] : oldMesh.material;
 
-        this.instancedMesh = new THREE.InstancedMesh(this.geometry, material, this.num);
+        this.instancedMesh = new THREE.InstancedMesh(this.geometry, material, this.maxCount);
         this.instancedMesh.position.copy(oldMesh.position);
         this.instancedMesh.rotation.copy(oldMesh.rotation);
         this.instancedMesh.scale.copy(oldMesh.scale);
+        this.instancedMesh.count = this.num;
 
         // 有父级则替换引用
         if (oldMesh.parent) {
@@ -349,5 +391,14 @@ export class InstancedMeshFoundation {
             oldMesh.parent.remove(oldMesh);
         }
         oldMesh.dispose();
+    }
+
+    /**
+     * 计算大于等于 n 的最小 2 的幂
+     */
+    protected nextPowerOfTwo(n: number): number {
+        let p = 1;
+        while (p < n) p *= 2;
+        return p;
     }
 }
