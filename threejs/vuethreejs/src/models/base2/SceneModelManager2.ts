@@ -126,6 +126,7 @@ export default class SceneModelManager2 {
         }
         this.camera.position.set(5, 5, 10);
         this.camera.lookAt(0, 0, 0);
+        this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
         this.scene.add(new THREE.DirectionalLight(0xffffff, 0.5));
         this.scene.add(new THREE.AxesHelper(10));
         await this.loader.initialize();
@@ -164,7 +165,7 @@ export default class SceneModelManager2 {
      *
      * 已存在于 modelMap 中的 key 会跳过（不重复创建）。
      */
-    addLoaderSceneByData(data: SceneData): void {
+    async addLoaderSceneByData(data: SceneData): Promise<void> {
         for (const [key, instances] of Object.entries(data)) {
             if (this.modelMap.has(key)) continue;
 
@@ -176,7 +177,7 @@ export default class SceneModelManager2 {
             );
 
             const factory = this.registry.get(key) ?? this.defaultFactory(key);
-            const model = factory(key, primitive, mapData);
+            const model = await factory(key, primitive, mapData);
             model.addScene(this.scene);
             this.modelMap.set(key, model);
         }

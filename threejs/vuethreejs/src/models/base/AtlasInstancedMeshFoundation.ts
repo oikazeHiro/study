@@ -115,6 +115,81 @@ export class AtlasInstancedMeshFoundation extends InstancedMeshFoundation {
         this.assignTileIndices(dataMap)
     }
 
+    // ======================== 静态工具：BoxGeometry UV 重映射 ========================
+
+    /**
+     * 长方体展开贴图的十字形布局中，每个面对应的 UV 区域。
+     *
+     * 十字布局（4 列 × 3 行）：
+     * ```
+     *             +Y (top)           col=1, row=0
+     * -X (left)  +Z (front)  +X (right)  -Z (back)
+     * col=0,row=1 col=1,row=1 col=2,row=1 col=3,row=1
+     *             -Y (bottom)        col=1, row=2
+     * ```
+     *
+     * 与 Three.js BoxGeometry 的 group 顺序对应：
+     *   group 0: +X, group 1: -X, group 2: +Y, group 3: -Y, group 4: +Z, group 5: -Z
+     */
+    private static readonly CROSS_FACE_UVS: Array<{ uMin: number; uMax: number; vMin: number; vMax: number }> = [
+        { uMin: 0.5,  uMax: 0.75, vMin: 1 / 3, vMax: 2 / 3 }, // group 0: +X (right)
+        { uMin: 0.0,  uMax: 0.25, vMin: 1 / 3, vMax: 2 / 3 }, // group 1: -X (left)
+        { uMin: 0.25, uMax: 0.5,  vMin: 0.0,   vMax: 1 / 3 }, // group 2: +Y (top)
+        { uMin: 0.25, uMax: 0.5,  vMin: 2 / 3, vMax: 1.0   }, // group 3: -Y (bottom)
+        { uMin: 0.25, uMax: 0.5,  vMin: 1 / 3, vMax: 2 / 3 }, // group 4: +Z (front)
+        { uMin: 0.75, uMax: 1.0,  vMin: 1 / 3, vMax: 2 / 3 }, // group 5: -Z (back)
+    ]
+
+    /**
+     * 将 BoxGeometry 的 UV 重映射为十字形展开布局。
+     *
+     * 默认 BoxGeometry 每个面都映射到完整的 [0,1]×[0,1] UV 范围。
+     * 调用此方法后，每个面只采样十字布局中对应的子区域，
+     * 适合使用长方体展开图作为纹理贴图。
+     *
+     * **注意：**
+     *   - 直接修改传入的 geometry，不创建副本
+     *   - 仅对 BoxGeometry（6 个面，每面 4 顶点）生效
+     *   - 与纹理图集（atlas）配合使用时，图集中每张 tile 都应是十字展开图
+     *
+     * 使用示例：
+     * ```typescript
+     * const boxGeo = new THREE.BoxGeometry(1, 1, 1)
+     * AtlasInstancedMeshFoundation.remapBoxUVForCrossLayout(boxGeo)
+     * await mesh.initFromUrls(boxGeo, ['box-unwrap.jpg'], dataMap, 'box', 1)
+     * ```
+     */
+    static remapBoxUVForCrossLayout(geometry: THREE.BufferGeometry): void {
+        const uvAttr = geometry.getAttribute('uv')
+        if (!uvAttr) {
+            console.warn('AtlasInstancedMeshFoundation: geometry 没有 UV 属性，跳过重映射')
+            return
+        }
+
+        const uvArray = uvAttr.array as Float32Array
+        const verticesPerFace = 4 // BoxGeometry 每面 4 个顶点
+        const floatsPerVertex = 2 // u, v
+
+        // 每个 face 有 4 个顶点，UV 数组中连续排列
+        for (let face = 0; face < 6; face++) {
+            const region = this.CROSS_FACE_UVS[face]
+            const uRange = region.uMax - region.uMin
+            const vRange = region.vMax - region.vMin
+
+            for (let v = 0; v < verticesPerFace; v++) {
+                const offset = (face * verticesPerFace + v) * floatsPerVertex
+                const u = uvArray[offset]
+                const w = uvArray[offset + 1] // 原 v，避免与 range 变量名冲突
+
+                // 从 [0,1] 重映射到目标子区域
+                uvArray[offset] = region.uMin + u * uRange
+                uvArray[offset + 1] = region.vMin + w * vRange
+            }
+        }
+
+        uvAttr.needsUpdate = true
+    }
+
     // ======================== 纹理图集构建 ========================
 
     private validateImageCount(count: number): void {
@@ -222,6 +297,7 @@ export class AtlasInstancedMeshFoundation extends InstancedMeshFoundation {
             map: this.atlasTexture,
             roughness: 0.6,
             metalness: 0.2,
+            side: THREE.DoubleSide,
         })
 
         material.onBeforeCompile = (shader) => {

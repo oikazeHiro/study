@@ -55,6 +55,7 @@ export class InstancedMeshFoundation implements ManagedModel {
         this.maxCount = maxCount ?? this.nextPowerOfTwo(this.num || 1);
         this.instancedMesh = new THREE.InstancedMesh(geometry, material, this.maxCount);
         this.instancedMesh.count = this.num;
+        this.instancedMesh.name = type
         this.refreshKeyMap(dataMap);
         this.instanceTransforms.clear();
         this.initAllMatrices(dataMap);

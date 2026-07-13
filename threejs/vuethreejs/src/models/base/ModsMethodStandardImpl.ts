@@ -51,7 +51,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
         } else {
             model.visible = value?.status === 'normal';
         }
-        model.uuid = this.key+ "_" + key;
+        model.uuid = key;
         model.name = model.uuid;
         this.group.add(model);
         return model;
@@ -91,6 +91,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
                 if (value.scale) this.setScale(key, anyDataToVector3(value.scale));
                 // visible 优先于 status
                 if (value.visible !== undefined) {
+                    console.log("updateData visible",key,value.visible)
                     this.setVisible(key, !!value.visible);
                 } else if (value.status !== undefined) {
                     this.setVisible(key, value.status === 'normal');
@@ -118,6 +119,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
 
     setVisible(name: string, visible: boolean): this {
         const objectByName = this.group.getObjectByName(name);
+        console.log("要隐藏的模型",objectByName)
         if (objectByName) {
             objectByName.visible = visible;
         }

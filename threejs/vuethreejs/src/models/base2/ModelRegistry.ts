@@ -13,7 +13,7 @@ export type LoaderModelFactory = (
     key: string,
     primitive: THREE.Object3D,
     data: Map<string, ModelInstanceData>,
-) => ManagedModel
+) => ManagedModel | Promise<ManagedModel>
 
 /**
  * 模型工厂注册中心。
