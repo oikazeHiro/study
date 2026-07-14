@@ -2,30 +2,8 @@
   <div ref="canvasContainer" class="canvas-fill">
     <div class="ui-overlay">
       <el-button-group>
-        <el-button size="small" @click="toggleAll">
-          {{ allVisible ? '全部隐藏' : '全部显示' }}
-        </el-button>
         <el-button size="small" @click="resetCamera">重置视角</el-button>
       </el-button-group>
-      <div v-if="loaded" class="instance-list">
-        <el-tag
-            v-for="(_, key) in testData.sanHuoShip"
-            :key="key"
-            :type="visibles[key] !== false ? '' : 'info'"
-            size="small"
-            @click="toggleOne('sanHuoShip', key)"
-        >{{ key }}
-        </el-tag>
-        <el-divider direction="vertical"/>
-        <el-tag
-            v-for="(_, key) in testData.zhuangZaiJi"
-            :key="key"
-            :type="visibles[key] !== false ? 'success' : 'info'"
-            size="small"
-            @click="toggleOne('zhuangZaiJi', key)"
-        >{{ key }}
-        </el-tag>
-      </div>
     </div>
   </div>
 </template>
@@ -70,9 +48,9 @@ const testData: SceneData = {
  *   10×10 = 100 实例 → ~5M 顶点/车型 → ~160 MB/车型
  *   100×100 = 10,000 实例 → ~500M 顶点/车型 → ~16 GB/车型  ⚠️ 极高
  */
-const CAR_GRID = 10       // 网格边长（10×10=100 辆/车型）
+const CAR_GRID = 20       // 网格边长（10×10=100 辆/车型）
 const CAR_SPACING = 5     // 车辆间距
-const CAR_HEIGHT = 0   // 生成y 的高度
+const CAR_HEIGHT = 20   // 生成y 的高度
 
 /** 生成汽车网格数据 */
 const addCarGrid = (modelKey: string, offsetZ: number) => {
@@ -92,34 +70,34 @@ const addCarGrid = (modelKey: string, offsetZ: number) => {
 }
 
 const testDataAddData = () => {
-  // const h = 100; // 长
-  // const w = 100; // 宽
-  // const v = 10; // 高
-  // const x = 1.5;
-  // const container = new Map<string,ModelInstanceData>
-  // for (let i = 0; i < h; i++) {
-  //   for (let j = 0; j < w; j++) {
-  //     for (let k = 0; k < v; k++) {
-  //       container.set(`container_${i}_${j}_${k}`,{
-  //         position: {x: x*i, y: x*k, z: x*j},
-  //         rotation: {x: 0, y: 0, z: 0},
-  //         scale: {x: 1, y: 1, z: 1},
-  //         status: 'normal'
-  //       })
-  //     }
-  //   }
-  // }
-  // testData.container = Object.fromEntries(container)
-  // const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  // AtlasInstancedMeshFoundation.remapBoxUVForCrossLayout(geometry);
-  // const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-  // const cube = new THREE.Mesh( geometry, material );
-  // manager.loader.loadedModels.set("container",cube);
+  const h = 100; // 长
+  const w = 100; // 宽
+  const v = 10; // 高
+  const x = 1.5;
+  const container = new Map<string,ModelInstanceData>
+  for (let i = 0; i < h; i++) {
+    for (let j = 0; j < w; j++) {
+      for (let k = 0; k < v; k++) {
+        container.set(`container_${i}_${j}_${k}`,{
+          position: {x: x*i, y: x*k, z: x*j},
+          rotation: {x: 0, y: 0, z: 0},
+          scale: {x: 1, y: 1, z: 1},
+          status: 'normal'
+        })
+      }
+    }
+  }
+  testData.container = Object.fromEntries(container)
+  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  AtlasInstancedMeshFoundation.remapBoxUVForCrossLayout(geometry);
+  const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  const cube = new THREE.Mesh( geometry, material );
+  manager.loader.loadedModels.set("container",cube);
 
   // 汽车网格：3 种车型，各占一片区域
   // z 轴偏移让不同车型错开，避免重叠
   addCarGrid('chevrolet_m1009', CAR_GRID * CAR_SPACING * 0)
-  addCarGrid('test', CAR_GRID * CAR_SPACING * 1)
+  // addCarGrid('test', CAR_GRID * CAR_SPACING * 1)
   addCarGrid('gt_001_vehicle',    CAR_GRID * CAR_SPACING * 2)
 
   console.log(testData)
@@ -219,7 +197,7 @@ const toggleOne = (modelKey: string, instanceKey: string) => {
 }
 
 const resetCamera = () => {
-  manager.camera.position.set(50, 50, 25)
+  manager.camera.position.set(100, 50, 100)
   manager.controls.target.set(0, 0, 0)
   manager.controls.update()
 }
@@ -231,7 +209,7 @@ const init = async () => {
   const {clientWidth: w, clientHeight: h} = canvasContainer.value
   manager.setRendererSize(w, h)
   canvasContainer.value.appendChild(manager.renderer.domElement)
-  manager.camera.position.set(50, 50, 25)
+  manager.camera.position.set(100, 50, 100)
   manager.controls.target.set(0, 0, 0)
   manager.controls.update()
   config.apply(manager.controls)

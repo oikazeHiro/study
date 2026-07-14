@@ -110,7 +110,6 @@ export default class SceneModelManager {
             SceneModelManager.registerModel('sanHuoShip', SanHuoShipModel);
             SceneModelManager.registerModel('car', CarModel);
             SceneModelManager.registerModel('groud', GroundModel);
-            SceneModelManager.registerModel('container', ContainerModel);
         }
     }
 
