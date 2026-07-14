@@ -57,10 +57,8 @@ export default class CircularRibbon extends HdModImpl {
     data: any;
     id: string;
     mixer: AnimationMixer;
-    model: Object3D;
     AnimationActions: Array<THREE.AnimationAction>;
     name: string;
-    renderer: WebGLRenderer;
     scene: Scene;
 
     // 几何体和材质

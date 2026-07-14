@@ -1,83 +1,45 @@
-import {THREE, anyDataToVector3, anyDataToEuler, ModelBasisData, xyz} from '@/utils/threeModules'
+import {THREE, anyDataToVector3, anyDataToEuler, xyz} from '@/utils/threeModules'
 import { ManagedModel, ModelInstanceData } from "@/models/base/ManagedModel";
 
+export interface GeometryConfig {
+    geometry: THREE.BufferGeometry
+    /** 该几何体预计承载的实例数 */
+    reservedCount?: number
+}
+
+interface InstanceTransform {
+    id: string
+    position: xyz
+    rotation: xyz
+    scale: xyz
+    visible: boolean
+}
+
 /**
- * 几何体配置
+ * 基于 Three.js BatchedMesh 的大量实例渲染基类。
  *
- * BatchedMesh 的"材质多样"体现在：
- *   - mesh-level 的 material 数组（batchedMesh.material = [matA, matB, ...]）
- *   - 每个 geometry 的 group 通过 materialIndex 引用上述数组中的材质
- *   - 不同实例使用不同 geometry → 自然拥有不同的材质组合
- *   - 再加 setColorAt() 为每个实例叠加颜色
- */
-interface GeometryConfig {
-    /** 几何体 */
-    geometry: THREE.BufferGeometry;
-    /** 预留给该几何体的最大实例数（可选） */
-    reservedCount?: number;
-}
-
-/**
- * 实例变换缓存
- */
-interface InstanceTransform extends ModelBasisData {
-    position: xyz;
-    rotation: xyz;
-    scale: xyz;
-    visible: boolean;
-}
-
-/**
- * 数量大但模型复制且材质多的模型
+ * 设计约束（经过验证）：
+ *   - BatchedMesh 构造函数只接受单个 Material，不接受数组
+ *   - 每个 dataMap entry 对应一个 BatchedMesh instance（调用 addInstance 一次）
+ *   - 多几何体模型需在子类扩展 dataMap（每个子几何体一个 entry）
  */
 export class BatchedMeshFoundation implements ManagedModel {
-    /** 实例数据映射，key → data */
-    dataMap: Map<string, any>;
-    /** BatchedMesh 实例 */
-    batchedMesh!: THREE.BatchedMesh;
-    /** geometryId → GeometryConfig */
-    geometryMap: Map<number, GeometryConfig>;
-    /** data key → instanceId */
-    keyToInstanceId: Map<string, number>;
-    /** instanceId → data key */
-    instanceIdToKey: Map<number, string>;
-    /** instanceId → geometryId（BatchedMesh 无公开 getter，自己维护） */
-    private instanceGeometryMap: Map<number, number>;
-    /** 每个实例的变换缓存，key 同 dataMap */
-    private instanceTransforms: Map<string, InstanceTransform>;
 
-    type: string;
+    dataMap: Map<string, any> = new Map()
+    batchedMesh!: THREE.BatchedMesh
+    num = 0
+    maxInstanceCount = 0
+    maxVertexCount = 0
+    maxIndexCount = 0
+    geometryMap: Map<number, GeometryConfig> = new Map()
+    keyToInstanceId: Map<string, number> = new Map()
+    instanceIdToKey: Map<number, string> = new Map()
+    protected instanceGeometryMap: Map<number, number> = new Map()
+    protected instanceTransforms: Map<string, InstanceTransform> = new Map()
+    protected _dummy = new THREE.Object3D()
+    type = ''
 
-    constructor() {
-        this.dataMap = new Map();
-        this.geometryMap = new Map();
-        this.keyToInstanceId = new Map();
-        this.instanceIdToKey = new Map();
-        this.instanceGeometryMap = new Map();
-        this.instanceTransforms = new Map();
-    }
-
-    /**
-     * 初始化 BatchedMesh
-     *
-     * BatchedMesh 需要预估 GPU 容量（不可动态扩容），
-     * 因此调用方需指定 maxInstanceCount / maxVertexCount / maxIndexCount。
-     *
-     * 材质多样性通过 mesh-level 的 material 数组实现：
-     *   batchedMesh.material = [matA, matB, ...]
-     *   每个 geometry 的 group 按其 materialIndex 自动引用对应材质。
-     *   不同实例使用不同 geometry → 自然对应不同的材质组合。
-     *
-     * @param maxInstanceCount 最大实例数
-     * @param maxVertexCount  最大顶点总数
-     * @param maxIndexCount   最大索引总数
-     * @param material        mesh-level 材质（单个或数组），各 geometry group 的 materialIndex 引用此数组
-     * @param geometries      几何体配置数组（至少一个）
-     * @param dataMap         实例数据，每项可含：
-     *                          - geometryId  指定使用哪个几何体（不填则用第一个）
-     *                          - position / rotation / scale / visible / color （同 InstancedMeshFoundation）
-     * @param type 类型
-     */
+    /** 初始化。material 支持单个或数组（BatchedMesh 继承自 Mesh，运行时支持数组） */
     init(
         maxInstanceCount: number,
         maxVertexCount: number,
@@ -87,464 +49,212 @@ export class BatchedMeshFoundation implements ManagedModel {
         dataMap: Map<string, any>,
         type: string,
     ): this {
-        this.type = type;
-        if (geometries.length === 0) {
-            throw new Error('BatchedMeshFoundation.init: geometries 不能为空');
-        }
-        this.dataMap = dataMap;
-        // @types/three 声明只接受 Material，但运行时 BatchedMesh extends Mesh 实际支持 Material | Material[]
+        if (geometries.length === 0) throw new Error('BatchedMeshFoundation.init: geometries 不能为空')
+
+        this.type = type
+        this.maxInstanceCount = maxInstanceCount
+        this.maxVertexCount = maxVertexCount
+        this.maxIndexCount = maxIndexCount
+        this.dataMap = dataMap
+        this.num = 0
+
         this.batchedMesh = new THREE.BatchedMesh(
-            maxInstanceCount, maxVertexCount, maxIndexCount, material as THREE.Material
-        );
+            maxInstanceCount, maxVertexCount, maxIndexCount,
+            material as unknown as THREE.Material, // @types/three 声明只接受 Material，但运行时支持数组
+        )
+        this.batchedMesh.name = type
 
-
-        // 注册所有几何体
-        this.geometryMap.clear();
-        for (const config of geometries) {
-            const geometryId = this.batchedMesh.addGeometry(
-                config.geometry,
-                config.reservedCount ?? Math.ceil(maxInstanceCount / geometries.length),
-            );
-            this.geometryMap.set(geometryId, config);
+        this.geometryMap.clear()
+        for (const cfg of geometries) {
+            const vc = cfg.geometry.getAttribute('position').count
+            const ic = cfg.geometry.index ? cfg.geometry.index.count : 0
+            const slots = cfg.reservedCount ?? Math.ceil(maxInstanceCount / geometries.length)
+            const gid = this.batchedMesh.addGeometry(cfg.geometry, vc * slots, ic * slots)
+            this.geometryMap.set(gid, cfg)
         }
 
-        // 添加所有实例并设置初始状态
-        this.keyToInstanceId.clear();
-        this.instanceIdToKey.clear();
-        this.instanceGeometryMap.clear();
-        this.instanceTransforms.clear();
-        this.initAllInstances(dataMap);
+        this.keyToInstanceId.clear()
+        this.instanceIdToKey.clear()
+        this.instanceGeometryMap.clear()
+        this.instanceTransforms.clear()
+        this.initAllInstances(dataMap)
 
-        return this;
+        this.batchedMesh.computeBoundingBox()
+        this.batchedMesh.computeBoundingSphere()
+        this.batchedMesh.frustumCulled = false
+
+        return this
     }
 
-    // ======================== 内部工具 ========================
+    // ======================== 实例创建 ========================
 
-    /**
-     * 遍历 dataMap 写入所有实例的初始矩阵、颜色与可见性
-     */
-    private initAllInstances(dataMap: Map<string, any>): void {
-        const dummy = new THREE.Object3D();
+    protected initAllInstances(dataMap: Map<string, any>): void {
         dataMap.forEach((value, key) => {
-            const geometryId = this.resolveGeometryId(value, key);
-            if (geometryId === undefined) return;
+            const gid = value.geometryId !== undefined ? Number(value.geometryId) : this.geometryMap.keys().next().value
+            if (gid === undefined || !this.geometryMap.has(gid)) return
 
-            const instanceId = this.batchedMesh.addInstance(geometryId);
-            this.registerInstance(key, instanceId, geometryId);
+            const iid = this.batchedMesh.addInstance(gid)
+            if (iid === -1) { console.warn(`BatchedMeshFoundation: 容量满, key=${key}`); return }
 
-            const position = value.position ? anyDataToVector3(value.position) : new THREE.Vector3();
-            const rotation = value.rotation ? anyDataToEuler(value.rotation) : new THREE.Euler();
-            const scale = value.scale ? anyDataToVector3(value.scale) : new THREE.Vector3(1, 1, 1);
-            const visible = value.visible !== undefined ? !!value.visible : true;
+            this.keyToInstanceId.set(key, iid)
+            this.instanceIdToKey.set(iid, key)
+            this.instanceGeometryMap.set(iid, gid)
 
-            this.instanceTransforms.set(key, {
-                id: key,
-                name: value.name,
-                status: value.status,
-                type: value.type,
-                description: value.description,
-                position: new xyz(position.x, position.y, position.z),
-                rotation: new xyz(rotation.x, rotation.y, rotation.z),
-                scale: new xyz(scale.x, scale.y, scale.z),
-                visible,
-            });
+            const pos = value.position ? anyDataToVector3(value.position) : new THREE.Vector3()
+            const rot = value.rotation ? anyDataToEuler(value.rotation) : new THREE.Euler()
+            const scl = value.scale ? anyDataToVector3(value.scale) : new THREE.Vector3(1, 1, 1)
+            const vis = value.visible !== undefined ? !!value.visible : true
 
-            // 写入矩阵与可见性
-            dummy.position.copy(position);
-            dummy.rotation.copy(rotation);
-            dummy.scale.copy(visible ? scale : new THREE.Vector3(0, 0, 0));
-            dummy.updateMatrix();
-            this.batchedMesh.setMatrixAt(instanceId, dummy.matrix);
-            this.batchedMesh.setVisibleAt(instanceId, visible);
+            this.instanceTransforms.set(key, { id: key, position: new xyz(pos.x, pos.y, pos.z), rotation: new xyz(rot.x, rot.y, rot.z), scale: new xyz(scl.x, scl.y, scl.z), visible: vis })
 
-            // 颜色
-            if (value.color !== undefined) {
-                this.batchedMesh.setColorAt(instanceId, new THREE.Color(value.color));
-            }
-        });
+            this._dummy.position.copy(pos)
+            this._dummy.rotation.copy(rot)
+            this._dummy.scale.copy(scl)
+            this._dummy.updateMatrix()
+            this.batchedMesh.setMatrixAt(iid, this._dummy.matrix)
+            this.batchedMesh.setVisibleAt(iid, vis)
+            if (value.color !== undefined) this.batchedMesh.setColorAt(iid, new THREE.Color(value.color))
+            this.num++
+        })
     }
 
-    /**
-     * 注册 key ↔ instanceId ↔ geometryId 的映射关系
-     */
-    private registerInstance(key: string, instanceId: number, geometryId: number): void {
-        this.keyToInstanceId.set(key, instanceId);
-        this.instanceIdToKey.set(instanceId, key);
-        this.instanceGeometryMap.set(instanceId, geometryId);
+    protected registerInstance(key: string, iid: number, gid: number): void {
+        this.keyToInstanceId.set(key, iid); this.instanceIdToKey.set(iid, key); this.instanceGeometryMap.set(iid, gid)
+    }
+    protected unregisterInstance(iid: number): void {
+        const k = this.instanceIdToKey.get(iid); if (k) this.keyToInstanceId.delete(k)
+        this.instanceIdToKey.delete(iid); this.instanceGeometryMap.delete(iid)
     }
 
-    /**
-     * 注销映射
-     */
-    private unregisterInstance(instanceId: number): void {
-        const key = this.instanceIdToKey.get(instanceId);
-        if (key) this.keyToInstanceId.delete(key);
-        this.instanceIdToKey.delete(instanceId);
-        this.instanceGeometryMap.delete(instanceId);
+    // ======================== 变换 ========================
+
+    protected composeMatrix(key: string): void {
+        const iid = this.keyToInstanceId.get(key)
+        const t = this.instanceTransforms.get(key)
+        if (iid === undefined || !t) return
+        this._dummy.position.copy(anyDataToVector3(t.position))
+        this._dummy.rotation.copy(anyDataToEuler(t.rotation))
+        this._dummy.scale.copy(anyDataToVector3(t.scale))
+        this._dummy.updateMatrix()
+        this.batchedMesh.setMatrixAt(iid, this._dummy.matrix)
+        this.batchedMesh.setVisibleAt(iid, t.visible)
     }
 
-    /**
-     * 从 data 解析 geometryId，未指定则 fallback 到第一个注册的几何体
-     */
-    private resolveGeometryId(value: any, key: string): number | undefined {
-        if (value.geometryId !== undefined) {
-            const gid = Number(value.geometryId);
-            if (this.geometryMap.has(gid)) return gid;
-            console.warn(`BatchedMeshFoundation: geometryId ${gid} 未注册，key=${key}`);
-            return undefined;
-        }
-        const first = this.geometryMap.keys().next();
-        return first.done ? undefined : first.value;
-    }
-
-    /**
-     * 从缓存组合指定实例的完整变换矩阵并写回 GPU
-     */
-    private composeMatrix(key: string): void {
-        const instanceId = this.keyToInstanceId.get(key);
-        const t = this.instanceTransforms.get(key);
-        if (instanceId === undefined || !t) return;
-
-        const dummy = new THREE.Object3D();
-        dummy.position.copy(anyDataToVector3(t.position));
-        dummy.rotation.copy(anyDataToEuler(t.rotation));
-        dummy.scale.copy(t.visible ? anyDataToVector3(t.scale) : new THREE.Vector3(0, 0, 0));
-        dummy.updateMatrix();
-        this.batchedMesh.setMatrixAt(instanceId, dummy.matrix);
-        this.batchedMesh.setVisibleAt(instanceId, t.visible);
-    }
-
-    /**
-     * 获取或创建某个 key 的变换缓存
-     */
     private getOrCreateTransform(key: string): InstanceTransform {
-        let t = this.instanceTransforms.get(key);
-        if (!t) {
-            t = {
-                id: key,
-                name: undefined,
-                status: undefined,
-                type: undefined,
-                description: undefined,
-                position: new xyz(),
-                rotation: new xyz(),
-                scale: new xyz(1, 1, 1),
-                visible: true,
-            };
-            this.instanceTransforms.set(key, t);
-        }
-        return t;
-    }
-
-    // ======================== 查询 ========================
-
-    /**
-     * 获取某个实例使用的 geometryId
-     */
-    getGeometryId(key: string): number | undefined {
-        const instanceId = this.keyToInstanceId.get(key);
-        if (instanceId === undefined) return undefined;
-        return this.instanceGeometryMap.get(instanceId);
-    }
-
-    /**
-     * 获取某个实例对应的 GeometryConfig
-     */
-    getGeometryConfig(key: string): GeometryConfig | undefined {
-        const geometryId = this.getGeometryId(key);
-        if (geometryId === undefined) return undefined;
-        return this.geometryMap.get(geometryId);
-    }
-
-    /**
-     * 获取 BatchedMesh 的 mesh-level 材质（单个或数组）
-     */
-    getMaterial(): THREE.Material | THREE.Material[] {
-        return this.batchedMesh.material;
-    }
-
-    /**
-     * 获取当前实例数
-     */
-    getInstanceCount(): number {
-        return this.batchedMesh.instanceCount;
+        let t = this.instanceTransforms.get(key)
+        if (!t) { t = { id: key, position: new xyz(), rotation: new xyz(), scale: new xyz(1, 1, 1), visible: true }; this.instanceTransforms.set(key, t) }
+        return t
     }
 
     // ======================== 单实例更新 ========================
 
-    /**
-     * 更新某个实例的位置
-     * @param data { id, position }
-     */
     updateOnePosition(data: any): this {
-        if (!data?.id || !data?.position) return this;
-        if (!this.keyToInstanceId.has(data.id)) return this;
-
-        const t = this.getOrCreateTransform(data.id);
-        t.position.copy(anyDataToVector3(data.position));
-        this.composeMatrix(data.id);
-        return this;
+        if (!data?.id || !data?.position || !this.keyToInstanceId.has(data.id)) return this
+        this.getOrCreateTransform(data.id).position.copy(anyDataToVector3(data.position)); this.composeMatrix(data.id); return this
     }
-
-    /**
-     * 更新某个实例的旋转
-     * @param data { id, rotation }
-     */
     updateOneRotation(data: any): this {
-        if (!data?.id || !data?.rotation) return this;
-        if (!this.keyToInstanceId.has(data.id)) return this;
-
-        const t = this.getOrCreateTransform(data.id);
-        t.rotation.copy(anyDataToEuler(data.rotation));
-        this.composeMatrix(data.id);
-        return this;
+        if (!data?.id || !data?.rotation || !this.keyToInstanceId.has(data.id)) return this
+        this.getOrCreateTransform(data.id).rotation.copy(anyDataToEuler(data.rotation)); this.composeMatrix(data.id); return this
     }
-
-    /**
-     * 更新某个实例的缩放
-     * @param data { id, scale }
-     */
     updateOneScale(data: any): this {
-        if (!data?.id || !data?.scale) return this;
-        if (!this.keyToInstanceId.has(data.id)) return this;
-
-        const t = this.getOrCreateTransform(data.id);
-        t.scale.copy(anyDataToVector3(data.scale));
-        this.composeMatrix(data.id);
-        return this;
+        if (!data?.id || !data?.scale || !this.keyToInstanceId.has(data.id)) return this
+        this.getOrCreateTransform(data.id).scale.copy(anyDataToVector3(data.scale)); this.composeMatrix(data.id); return this
     }
-
-    /**
-     * 更新某个实例的可见性
-     * BatchedMesh 原生 setVisibleAt，无需 zero-scale hack
-     * @param data { id, visible }
-     */
     updateOneVisible(data: any): this {
-        if (!data?.id || data.visible === undefined) return this;
-        const instanceId = this.keyToInstanceId.get(data.id);
-        if (instanceId === undefined) return this;
-
-        const t = this.getOrCreateTransform(data.id);
-        t.visible = !!data.visible;
-        this.composeMatrix(data.id);
-        return this;
+        if (!data?.id || data.visible === undefined) return this
+        const iid = this.keyToInstanceId.get(data.id); if (iid === undefined) return this
+        this.getOrCreateTransform(data.id).visible = !!data.visible; this.composeMatrix(data.id); return this
     }
-
-    /**
-     * 更新某个实例的颜色
-     * @param data { id, color }
-     */
     updateOneColor(data: any): this {
-        if (!data?.id || data.color === undefined) return this;
-        const instanceId = this.keyToInstanceId.get(data.id);
-        if (instanceId === undefined) return this;
-
-        this.batchedMesh.setColorAt(instanceId, new THREE.Color(data.color));
-        return this;
+        if (!data?.id || data.color === undefined) return this
+        const iid = this.keyToInstanceId.get(data.id); if (iid === undefined) return this
+        this.batchedMesh.setColorAt(iid, new THREE.Color(data.color)); return this
     }
 
     // ======================== 整体变换 ========================
 
-    updateSize(vector3: THREE.Vector3): this {
-        this.batchedMesh.scale.copy(vector3);
-        return this;
-    }
+    updateSize(v: THREE.Vector3): this { this.batchedMesh.scale.copy(v); return this }
+    updatePosition(v: THREE.Vector3): this { this.batchedMesh.position.copy(v); return this }
+    updateRotation(e: THREE.Euler): this { this.batchedMesh.rotation.copy(e); return this }
 
-    updatePosition(vector3: THREE.Vector3): this {
-        this.batchedMesh.position.copy(vector3);
-        return this;
-    }
+    // ======================== ManagedModel 接口 ========================
 
-    updateRotation(euler: THREE.Euler): this {
-        this.batchedMesh.rotation.copy(euler);
-        return this;
-    }
+    setPosition(n: string, p: THREE.Vector3): this { return this.updateOnePosition({ id: n, position: p }) }
+    setRotation(n: string, r: THREE.Euler): this { return this.updateOneRotation({ id: n, rotation: r }) }
+    setScale(n: string, s: THREE.Vector3): this { return this.updateOneScale({ id: n, scale: s }) }
+    setVisible(n: string, v: boolean): this { return this.updateOneVisible({ id: n, visible: v }) }
+    setColor(n: string, c: THREE.Color): this { return this.updateOneColor({ id: n, color: c }) }
 
-    // ======================== ManagedModel 统一接口 ========================
+    // ======================== 增删 ========================
 
-    setPosition(name: string, position: THREE.Vector3): this {
-        return this.updateOnePosition({ id: name, position });
-    }
-
-    setRotation(name: string, rotation: THREE.Euler): this {
-        return this.updateOneRotation({ id: name, rotation });
-    }
-
-    setScale(name: string, scale: THREE.Vector3): this {
-        return this.updateOneScale({ id: name, scale });
-    }
-
-    setVisible(name: string, visible: boolean): this {
-        return this.updateOneVisible({ id: name, visible });
-    }
-
-    setColor(name: string, color: THREE.Color): this {
-        return this.updateOneColor({ id: name, color });
-    }
-
-    // ======================== 动态增删实例 ========================
-
-    /**
-     * 动态添加一个实例（O(1)，无需重建）
-     * @param key  实例标识
-     * @param data 实例数据，可含 geometryId / position / rotation / scale / visible / color
-     */
     addOne(key: string, data: any): this {
-        if (this.keyToInstanceId.has(key)) {
-            console.warn(`BatchedMeshFoundation.addOne: key "${key}" 已存在`);
-            return this;
-        }
+        if (this.keyToInstanceId.has(key)) { console.warn(`addOne: key "${key}" 已存在`); return this }
+        const gid = data.geometryId !== undefined ? Number(data.geometryId) : this.geometryMap.keys().next().value
+        if (gid === undefined || !this.geometryMap.has(gid)) return this
+        const iid = this.batchedMesh.addInstance(gid)
+        if (iid === -1) { console.warn(`addOne: 容量满, key=${key}`); return this }
+        this.registerInstance(key, iid, gid); this.dataMap.set(key, data); this.num++
 
-        const geometryId = this.resolveGeometryId(data, key);
-        if (geometryId === undefined) return this;
-
-        const instanceId = this.batchedMesh.addInstance(geometryId);
-        this.registerInstance(key, instanceId, geometryId);
-        this.dataMap.set(key, data);
-
-        const position = data.position ? anyDataToVector3(data.position) : new THREE.Vector3();
-        const rotation = data.rotation ? anyDataToEuler(data.rotation) : new THREE.Euler();
-        const scale = data.scale ? anyDataToVector3(data.scale) : new THREE.Vector3(1, 1, 1);
-        const visible = data.visible !== undefined ? !!data.visible : true;
-
-        this.instanceTransforms.set(key, {
-            id: key,
-            name: data.name,
-            status: data.status,
-            type: data.type,
-            description: data.description,
-            position: new xyz(position.x, position.y, position.z),
-            rotation: new xyz(rotation.x, rotation.y, rotation.z),
-            scale: new xyz(scale.x, scale.y, scale.z),
-            visible,
-        });
-
-        const dummy = new THREE.Object3D();
-        dummy.position.copy(position);
-        dummy.rotation.copy(rotation);
-        dummy.scale.copy(visible ? scale : new THREE.Vector3(0, 0, 0));
-        dummy.updateMatrix();
-        this.batchedMesh.setMatrixAt(instanceId, dummy.matrix);
-        this.batchedMesh.setVisibleAt(instanceId, visible);
-
-        if (data.color !== undefined) {
-            this.batchedMesh.setColorAt(instanceId, new THREE.Color(data.color));
-        }
-
-        return this;
+        const pos = data.position ? anyDataToVector3(data.position) : new THREE.Vector3()
+        const rot = data.rotation ? anyDataToEuler(data.rotation) : new THREE.Euler()
+        const scl = data.scale ? anyDataToVector3(data.scale) : new THREE.Vector3(1, 1, 1)
+        const vis = data.visible !== undefined ? !!data.visible : true
+        this.instanceTransforms.set(key, { id: key, position: new xyz(pos.x, pos.y, pos.z), rotation: new xyz(rot.x, rot.y, rot.z), scale: new xyz(scl.x, scl.y, scl.z), visible: vis })
+        this._dummy.position.copy(pos); this._dummy.rotation.copy(rot); this._dummy.scale.copy(scl); this._dummy.updateMatrix()
+        this.batchedMesh.setMatrixAt(iid, this._dummy.matrix); this.batchedMesh.setVisibleAt(iid, vis)
+        if (data.color !== undefined) this.batchedMesh.setColorAt(iid, new THREE.Color(data.color))
+        return this
     }
 
-    /**
-     * 动态移除一个实例（O(1)，无需重建）
-     * @param key 实例标识
-     */
     removeOne(key: string): this {
-        const instanceId = this.keyToInstanceId.get(key);
-        if (instanceId === undefined) return this;
-
-        this.batchedMesh.deleteInstance(instanceId);
-        this.unregisterInstance(instanceId);
-        this.dataMap.delete(key);
-        this.instanceTransforms.delete(key);
-        return this;
+        const iid = this.keyToInstanceId.get(key); if (iid === undefined) return this
+        this.batchedMesh.deleteInstance(iid); this.unregisterInstance(iid)
+        this.dataMap.delete(key); this.instanceTransforms.delete(key)
+        this.num = Math.max(0, this.num - 1); return this
     }
 
-    // ======================== 批量更新 ========================
+    // ======================== 批量 ========================
 
-    /**
-     * 全量更新：diff 新旧 dataMap，增量增删 + 更新已有实例
-     * 比 InstancedMeshFoundation.updateAll 高效——无需重建
-     */
     updateAll(dataMap: Map<string, ModelInstanceData>): this {
-        const newKeys = new Set(dataMap.keys());
-        const oldKeys = new Set(this.dataMap.keys());
-
-        // 1. 删除
-        for (const key of oldKeys) {
-            if (!newKeys.has(key)) this.removeOne(key);
-        }
-
-        // 2. 新增
-        for (const key of newKeys) {
-            if (!oldKeys.has(key)) this.addOne(key, dataMap.get(key));
-        }
-
-        // 3. 更新已有
-        for (const key of newKeys) {
-            if (oldKeys.has(key)) {
-                this.dataMap.set(key, dataMap.get(key));
-                this.updateExistingInstance(key, dataMap.get(key));
+        const nk = new Set(dataMap.keys()), ok = new Set(this.dataMap.keys())
+        for (const k of ok) { if (!nk.has(k)) this.removeOne(k) }
+        for (const k of nk) { if (!ok.has(k)) this.addOne(k, dataMap.get(k)) }
+        for (const k of nk) {
+            if (ok.has(k)) {
+                const ex = this.dataMap.get(k) || {}, inc = dataMap.get(k) || {}
+                this.dataMap.set(k, { ...ex, ...inc }); this.updateExistingInstance(k, inc)
             }
         }
-
-        return this;
+        return this
     }
 
-    /**
-     * 更新一个已存在的实例
-     */
-    private updateExistingInstance(key: string, value: any): void {
-        const instanceId = this.keyToInstanceId.get(key);
-        if (instanceId === undefined) return;
-
-        const t = this.getOrCreateTransform(key);
-        if (value.position) t.position.copy(anyDataToVector3(value.position));
-        if (value.rotation) t.rotation.copy(anyDataToEuler(value.rotation));
-        if (value.scale) t.scale.copy(anyDataToVector3(value.scale));
-        if (value.visible !== undefined) t.visible = !!value.visible;
-
-        this.composeMatrix(key);
-
-        if (value.color !== undefined) {
-            this.batchedMesh.setColorAt(instanceId, new THREE.Color(value.color));
-        }
+    protected updateExistingInstance(key: string, value: any): void {
+        const iid = this.keyToInstanceId.get(key); if (iid === undefined) return
+        const t = this.getOrCreateTransform(key)
+        if (value.position) t.position.copy(anyDataToVector3(value.position))
+        if (value.rotation) t.rotation.copy(anyDataToEuler(value.rotation))
+        if (value.scale) t.scale.copy(anyDataToVector3(value.scale))
+        if (value.visible !== undefined) t.visible = !!value.visible
+        this.composeMatrix(key)
+        if (value.color !== undefined) this.batchedMesh.setColorAt(iid, new THREE.Color(value.color))
     }
 
-    /**
-     * 基于当前缓存刷新所有实例的矩阵
-     */
-    update(): this {
-        this.dataMap.forEach((_value, key) => {
-            this.composeMatrix(key);
-        });
-        return this;
-    }
+    update(): this { this.dataMap.forEach((_, k) => this.composeMatrix(k)); return this }
 
-    disposeAll(): void {
-        this.dispose();
-    }
+    // ======================== 场景 & 生命周期 ========================
 
-    // ======================== 场景管理 ========================
+    addScene(scene: THREE.Scene): this { scene.add(this.batchedMesh); return this }
+    removeScene(scene: THREE.Scene): this { scene.remove(this.batchedMesh); return this }
+    disposeAll(): void { this.dispose() }
 
-    addScene(scene: THREE.Scene): this {
-        scene.add(this.batchedMesh);
-        return this;
-    }
-
-    removeScene(scene: THREE.Scene): this {
-        scene.remove(this.batchedMesh);
-        return this;
-    }
-
-    // ======================== 生命周期 ========================
-
-    /**
-     * 释放所有 GPU 资源并清理映射
-     */
     dispose(): void {
         if (this.batchedMesh) {
-            if (this.batchedMesh.parent) {
-                this.batchedMesh.parent.remove(this.batchedMesh);
-            }
-            // BatchedMesh.dispose() 一并释放内部托管的 geometry 与 material
-            this.batchedMesh.dispose();
+            if (this.batchedMesh.parent) this.batchedMesh.parent.remove(this.batchedMesh)
+            this.batchedMesh.dispose()
         }
-
-        this.geometryMap.clear();
-        this.keyToInstanceId.clear();
-        this.instanceIdToKey.clear();
-        this.instanceGeometryMap.clear();
-        this.dataMap.clear();
-        this.instanceTransforms.clear();
+        this.geometryMap.clear(); this.keyToInstanceId.clear(); this.instanceIdToKey.clear()
+        this.instanceGeometryMap.clear(); this.dataMap.clear(); this.instanceTransforms.clear()
     }
+
+    getInstanceCount(): number { return this.num }
 }

@@ -42,6 +42,8 @@ import {OrbitControlConfig, OrbitControlOptions} from '@/models/base2/OrbitContr
 import SanHuoShipModel from "@/models/loaderModel/SanHuoShipModel";
 import ContainerModel from "@/models/loaderModel/ContainerModel";
 import {AtlasInstancedMeshFoundation} from "@/models/base/AtlasInstancedMeshFoundation";
+import BatchedCarModel from "@/models/loaderModel/BatchedCarModel";
+import { BatchedMeshFoundation } from "@/models/base/BatchedMeshFoundation";
 import {getStaticUrl} from "@/utils/util";
 import {ModelInstanceData} from "@/models/base2/ManagedModel";
 import {THREE} from '@/utils/threeModules'
@@ -54,60 +56,72 @@ const visibles = reactive<Record<string, boolean>>({})
 const testData: SceneData = {
   // sanHuoShip: {
   //   ship_01: {position: {x: 0, y: 0, z: 0}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}, status: 'normal'},
-  //   ship_02: {
-  //     position: {x: 8, y: 0, z: 4},
-  //     rotation: {x: 0, y: Math.PI / 4, z: 0},
-  //     scale: {x: 0.8, y: 0.8, z: 0.8},
-  //     status: 'normal'
-  //   },
-  //   ship_03: {
-  //     position: {x: -8, y: 0, z: -4},
-  //     rotation: {x: 0, y: -Math.PI / 3, z: 0},
-  //     scale: {x: 1.2, y: 1.2, z: 1.2},
-  //     status: 'normal'
-  //   },
-  //   ship_04: {
-  //     position: {x: 4, y: 0, z: -8},
-  //     rotation: {x: 0, y: Math.PI / 2, z: 0},
-  //     scale: {x: 0.6, y: 0.6, z: 0.6},
-  //     status: 'hidden'
-  //   },
+  //   ...
   // },
-  // zhuangZaiJi: {
-  //   zzj_01: {position: {x: 3, y: 0, z: 3}, rotation: {x: 0, y: 0, z: 0}, scale: {x: 1, y: 1, z: 1}, status: 'normal'},
-  //   zzj_02: {
-  //     position: {x: -5, y: 0, z: 5},
-  //     rotation: {x: 0, y: Math.PI, z: 0},
-  //     scale: {x: 1, y: 1, z: 1},
-  //     status: 'normal'
-  //   },
-  // },
+  // zhuangZaiJi: { ... },
 }
 
-const testDataAddData = () => {
-  const h = 100; // 长
-  const w = 100; // 宽
-  const v = 10; // 高
-  const x = 1.5;
-  const container = new Map<string,ModelInstanceData>
-  for (let i = 0; i < h; i++) {
-    for (let j = 0; j < w; j++) {
-      for (let k = 0; k < v; k++) {
-        container.set(`container_${i}_${j}_${k}`,{
-          position: {x: x*i, y: x*k, z: x*j},
-          rotation: {x: 0, y: 0, z: 0},
-          scale: {x: 1, y: 1, z: 1},
-          status: 'normal'
-        })
+/**
+ * 汽车网格参数 —— 调这里控制实例数量
+ * BatchedMesh 会将所有几何体数据合并到 GPU 缓冲区，
+ * 实例数 × 模型顶点数 = 总显存占用，根据 GPU 显存调整。
+ *
+ * 参考：单辆汽车约 50K~100K 顶点
+ *   10×10 = 100 实例 → ~5M 顶点/车型 → ~160 MB/车型
+ *   100×100 = 10,000 实例 → ~500M 顶点/车型 → ~16 GB/车型  ⚠️ 极高
+ */
+const CAR_GRID = 10       // 网格边长（10×10=100 辆/车型）
+const CAR_SPACING = 5     // 车辆间距
+const CAR_HEIGHT = 0   // 生成y 的高度
+
+/** 生成汽车网格数据 */
+const addCarGrid = (modelKey: string, offsetZ: number) => {
+  const carData: Record<string, ModelInstanceData> = {}
+  for (let i = 0; i < CAR_GRID; i++) {
+    for (let j = 0; j < CAR_GRID; j++) {
+      carData[`${modelKey}_${i}_${j}`] = {
+        position: { x: CAR_SPACING * i, y: CAR_HEIGHT, z: offsetZ + CAR_SPACING * j },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: 1, y: 1, z: 1 },
+        status: 'normal',
       }
     }
   }
-  testData.container = Object.fromEntries(container)
-  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  AtlasInstancedMeshFoundation.remapBoxUVForCrossLayout(geometry);
-  const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-  const cube = new THREE.Mesh( geometry, material );
-  manager.loader.loadedModels.set("container",cube);
+  testData[modelKey] = carData
+  console.log(modelKey+"data: ",carData)
+}
+
+const testDataAddData = () => {
+  // const h = 100; // 长
+  // const w = 100; // 宽
+  // const v = 10; // 高
+  // const x = 1.5;
+  // const container = new Map<string,ModelInstanceData>
+  // for (let i = 0; i < h; i++) {
+  //   for (let j = 0; j < w; j++) {
+  //     for (let k = 0; k < v; k++) {
+  //       container.set(`container_${i}_${j}_${k}`,{
+  //         position: {x: x*i, y: x*k, z: x*j},
+  //         rotation: {x: 0, y: 0, z: 0},
+  //         scale: {x: 1, y: 1, z: 1},
+  //         status: 'normal'
+  //       })
+  //     }
+  //   }
+  // }
+  // testData.container = Object.fromEntries(container)
+  // const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  // AtlasInstancedMeshFoundation.remapBoxUVForCrossLayout(geometry);
+  // const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  // const cube = new THREE.Mesh( geometry, material );
+  // manager.loader.loadedModels.set("container",cube);
+
+  // 汽车网格：3 种车型，各占一片区域
+  // z 轴偏移让不同车型错开，避免重叠
+  addCarGrid('chevrolet_m1009', CAR_GRID * CAR_SPACING * 0)
+  addCarGrid('test', CAR_GRID * CAR_SPACING * 1)
+  addCarGrid('gt_001_vehicle',    CAR_GRID * CAR_SPACING * 2)
+
   console.log(testData)
 }
 
@@ -147,6 +161,40 @@ manager.registerModel('container', async (key, primitive, data) => {
   return model;
 })
 
+// ======================== 汽车模型（BatchedMesh） ========================
+// 注册工厂：primitive 是 GLB 加载后的 scene，直接传给 BatchedCarModel
+manager.registerModel('chevrolet_m1009', (key, primitive, data) => {
+  const model = new BatchedCarModel()
+  model.initFromScene(primitive, data, key, data.size)
+  return model
+})
+manager.registerModel('test', (key, primitive, data) => {
+  const model = new BatchedCarModel()
+  model.initFromScene(primitive, data, key, data.size)
+  return model
+})
+manager.registerModel('gt_001_vehicle', (key, primitive, data) => {
+  const model = new BatchedCarModel()
+  model.initFromScene(primitive, data, key, data.size)
+  return model
+})
+
+// 🧪 最小化 BatchedMesh 测试
+manager.registerModel('_test_batch', (key, primitive, data) => {
+  const model = new BatchedMeshFoundation()
+  const geo = (primitive as THREE.Mesh).geometry
+  const mat = (primitive as THREE.Mesh).material as THREE.Material
+  const vc = geo.getAttribute('position').count
+  const ic = geo.index ? geo.index.count : 0
+  model.init(
+    1, vc, ic,
+    mat,
+    [{ geometry: geo }],
+    data, key,
+  )
+  return model
+})
+
 const toggleAll = () => {
   allVisible.value = !allVisible.value
   const visible = allVisible.value
@@ -171,7 +219,7 @@ const toggleOne = (modelKey: string, instanceKey: string) => {
 }
 
 const resetCamera = () => {
-  manager.camera.position.set(20, 15, 25)
+  manager.camera.position.set(50, 50, 25)
   manager.controls.target.set(0, 0, 0)
   manager.controls.update()
 }
@@ -183,7 +231,7 @@ const init = async () => {
   const {clientWidth: w, clientHeight: h} = canvasContainer.value
   manager.setRendererSize(w, h)
   canvasContainer.value.appendChild(manager.renderer.domElement)
-  manager.camera.position.set(20, 15, 25)
+  manager.camera.position.set(50, 50, 25)
   manager.controls.target.set(0, 0, 0)
   manager.controls.update()
   config.apply(manager.controls)

@@ -49,7 +49,6 @@ export default class CurvedBar extends HdModImpl {
     data: any;
     id: string;
     name: string;
-    model: Object3D;
 
     private curve: THREE.CatmullRomCurve3;
     private geometry: BufferGeometry | null = null;
@@ -481,12 +480,7 @@ export default class CurvedBar extends HdModImpl {
         return this.mesh as Mesh;
     }
 
-    AnimationActions: Array<THREE.AnimationAction>;
-    clock: THREE.Clock;
-    mixer: THREE.AnimationMixer;
-    renderer: WebGLRenderer;
-
     setAnimationActions(animationClips: Array<THREE.AnimationClip>): this {
-        return undefined;
+        return this;
     }
 }
