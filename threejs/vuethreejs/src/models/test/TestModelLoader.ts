@@ -49,6 +49,15 @@ export default class TestModelLoader extends ModelStandardLoader {
                 key: 'test',
                 name: 'test'
             },
+            {
+                isNeedLoaded: true,
+                lowModelPath: '/models/ship/container.glb',
+                mediumModelPath: '/models/ship/container.glb',
+                highModelPath: '/models/ship/container.glb',
+                path: '/models/ship/container.glb',
+                key: 'container',
+                name: 'container'
+            },
         ];
     }
 }

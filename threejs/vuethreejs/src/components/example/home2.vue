@@ -19,7 +19,6 @@ import ModsMethodStandardImpl from '@/models/base/ModsMethodStandardImpl'
 import {OrbitControlConfig, OrbitControlOptions} from '@/models/base2/OrbitControlConfig'
 import SanHuoShipModel from "@/models/loaderModel/SanHuoShipModel";
 import ContainerModel from "@/models/loaderModel/ContainerModel";
-import {AtlasInstancedMeshFoundation} from "@/models/base/AtlasInstancedMeshFoundation";
 import BatchedCarModel from "@/models/loaderModel/BatchedCarModel";
 import { BatchedMeshFoundation } from "@/models/base/BatchedMeshFoundation";
 import {getStaticUrl} from "@/utils/util";
@@ -50,7 +49,7 @@ const testData: SceneData = {
  */
 const CAR_GRID = 20       // 网格边长（10×10=100 辆/车型）
 const CAR_SPACING = 5     // 车辆间距
-const CAR_HEIGHT = 20   // 生成y 的高度
+const CAR_HEIGHT = 50   // 生成y 的高度
 
 /** 生成汽车网格数据 */
 const addCarGrid = (modelKey: string, offsetZ: number) => {
@@ -73,40 +72,38 @@ const testDataAddData = () => {
   const h = 100; // 长
   const w = 100; // 宽
   const v = 10; // 高
-  const x = 1.5;
+  const x = 4.5;
   const container = new Map<string,ModelInstanceData>
   for (let i = 0; i < h; i++) {
     for (let j = 0; j < w; j++) {
       for (let k = 0; k < v; k++) {
         container.set(`container_${i}_${j}_${k}`,{
           position: {x: x*i, y: x*k, z: x*j},
-          rotation: {x: 0, y: 0, z: 0},
-          scale: {x: 1, y: 1, z: 1},
+          rotation: {x: 0, y: Math.PI/2, z: 0},
+          scale: {x: 2, y: 1, z: 1},
           status: 'normal'
         })
       }
     }
   }
-  testData.container = Object.fromEntries(container)
-  const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-  AtlasInstancedMeshFoundation.remapBoxUVForCrossLayout(geometry);
-  const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-  const cube = new THREE.Mesh( geometry, material );
-  manager.loader.loadedModels.set("container",cube);
+  // 输出 container 占多少内存
 
+  testData.container = Object.fromEntries(container)
   // 汽车网格：3 种车型，各占一片区域
   // z 轴偏移让不同车型错开，避免重叠
   addCarGrid('chevrolet_m1009', CAR_GRID * CAR_SPACING * 0)
   // addCarGrid('test', CAR_GRID * CAR_SPACING * 1)
   addCarGrid('gt_001_vehicle',    CAR_GRID * CAR_SPACING * 2)
-
-  console.log(testData)
 }
 
 const testConfig: OrbitControlOptions = {
   minDistance: 1,
   maxDistance: 400,
-  maxPolarAngle: Math.PI / 2,
+  // 去掉 maxPolarAngle 限制，允许从任意角度观察（不限制俯仰）
+  // 如果只想限制不过地面可用 Math.PI / 2 + 0.01 略过零点避免卡顿
+  rotateSpeed: 0.8,       // 旋转速度略慢，更跟手
+  dampingFactor: 0.08,    // 惯性稍大一点，手感更顺滑
+  enableDamping: true,
 }
 
 const manager = new SceneModelManager2()
@@ -129,12 +126,38 @@ manager.registerModel('zhuangZaiJi', (key, primitive, data) => {
 
 manager.registerModel('container', async (key, primitive, data) => {
   const model = new ContainerModel()
-  // initFromUrls 期望 BufferGeometry，但 primitive 是 Mesh，需要取 .geometry
-  const geometry = (primitive as THREE.Mesh).geometry
+  // primitive 是 gltf.scene（THREE.Scene/Group），需遍历找到实际 Mesh
+  const meshes: THREE.Mesh[] = []
+  primitive.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh)
+  })
+  const mesh = meshes[0]
+  if (!mesh) {
+    console.error('container.glb 中未找到 Mesh 节点')
+    return model
+  }
+
+  // ----- UV 适配：GLTF → Three.js 纹理坐标转换 -----
+  // GLTFLoader 设置 texture.flipY=false（UV 的 V=0 在图像顶部）
+  // CanvasTexture（AtlasInstancedMeshFoundation 内部使用）默认 flipY=true（V=0 在图像底部）
+  // 因此需要将几何体 UV 的 V 分量翻转，使纹理采样方向正确
+  // 同时克隆几何体，避免修改共享的原始 GLB 几何体
+  const geometry = mesh.geometry.clone()
+  {
+    const uvAttr = geometry.getAttribute('uv')
+    const uvArr = uvAttr.array as Float32Array
+    for (let i = 1; i < uvArr.length; i += 2) {
+      uvArr[i] = 1.0 - uvArr[i]
+    }
+    uvAttr.needsUpdate = true
+  }
+  // 纹理图集：4 张图片（白/红/黄/蓝）列为 2，合为 2×2 图集
+  // AtlasInstancedMeshFoundation 按此图集生成自定义 shader，各实例通过 tileIndex 选取颜色
   await model.initFromUrls(geometry, [
-    getStaticUrl('~/assets/container/Wood095_1K-JPG_Color.jpg'),
-    getStaticUrl('~/assets/container/PavingStones150_1K-JPG_Color.jpg'),
-    getStaticUrl('~/assets/container/PavingStones149_1K-JPG_Color.jpg'),
+    getStaticUrl('~/assets/container/白色.png'),
+    getStaticUrl('~/assets/container/红色.png'),
+    getStaticUrl('~/assets/container/黄色.png'),
+    getStaticUrl('~/assets/container/蓝色.png'),
   ], data, key, 2)
   return model;
 })
@@ -216,6 +239,7 @@ const init = async () => {
   manager.stats.domElement.style.cssText = 'position:absolute;top:0;left:0;cursor:pointer;opacity:0.9'
   canvasContainer.value.appendChild(manager.stats.domElement)
   await manager.addLoaderSceneByData(testData)
+
   for (const instances of Object.values(testData)) {
     for (const key of Object.keys(instances)) {
       visibles[key] = true
