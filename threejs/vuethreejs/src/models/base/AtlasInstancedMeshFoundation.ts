@@ -378,6 +378,7 @@ export class AtlasInstancedMeshFoundation extends InstancedMeshFoundation {
      * Three.js 会自动以 instanced 模式传递到顶点着色器。
      */
     private writeTileIndexAttribute(): void {
+        if (!this.instancedMesh?.geometry) return
         const count = this.num
         const indices = new Float32Array(count)
 
@@ -397,6 +398,7 @@ export class AtlasInstancedMeshFoundation extends InstancedMeshFoundation {
      */
     updateOneTileIndex(key: string, tileIndex: number): this {
         if (!this.keyMap.has(key)) return this
+        if (!this.instancedMesh?.geometry) return this
         const clamped = Math.max(0, Math.min(tileIndex, this.imageUrls.length - 1))
         this.instanceTileIndex.set(key, clamped)
         this.writeTileIndexAttribute()

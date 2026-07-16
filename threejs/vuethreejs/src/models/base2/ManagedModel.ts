@@ -41,4 +41,20 @@ export interface ManagedModel {
     setColor(name: string, color: THREE.Color): this;
     /** 释放所有实例的资源 */
     disposeAll(): void;
+
+    /**
+     * 【可选】返回参与射线检测的 Object3D 列表。
+     *
+     * 实现此方法后 RaycastHelper 将优先使用它代替内部 instanceof 检测，
+     * 复合模型（如 BatchedCarModel 内含多个 BatchedMeshFoundation）必须实现此方法。
+     */
+    getRaycastTargets?(): THREE.Object3D[];
+
+    /**
+     * 【可选】将射线击中结果解析为实例标识与数据。
+     *
+     * @param intersect Raycaster.intersectObjects 返回的命中条目
+     * @returns { key, data } 或 null（未命中或不属于本模型）
+     */
+    resolveHit?(intersect: THREE.Intersection<THREE.Object3D>): { key: string; data: any } | null;
 }

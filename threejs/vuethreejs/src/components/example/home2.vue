@@ -1,9 +1,12 @@
 <template>
-  <div ref="canvasContainer" class="canvas-fill">
+  <div ref="canvasContainer" class="canvas-fill" @click="onClickCanvas">
     <div class="ui-overlay">
       <el-button-group>
         <el-button size="small" @click="resetCamera">重置视角</el-button>
       </el-button-group>
+      <el-tag size="small" :type="hitInfo.startsWith('命中') ? 'success' : 'info'">
+        {{ hitInfo }}
+      </el-tag>
     </div>
   </div>
 </template>
@@ -24,11 +27,14 @@ import { BatchedMeshFoundation } from "@/models/base/BatchedMeshFoundation";
 import {getStaticUrl} from "@/utils/util";
 import {ModelInstanceData} from "@/models/base2/ManagedModel";
 import {THREE} from '@/utils/threeModules'
+import {raycastModels} from '@/models/base2/RaycastHelper'
 
 const canvasContainer = ref<HTMLElement | null>(null)
 const loaded = ref(false)
 const allVisible = ref(true)
 const visibles = reactive<Record<string, boolean>>({})
+const hitInfo = ref('点击模型查看实例信息')
+const raycaster = new THREE.Raycaster()
 
 const testData: SceneData = {
   // sanHuoShip: {
@@ -166,17 +172,17 @@ manager.registerModel('container', async (key, primitive, data) => {
 // 注册工厂：primitive 是 GLB 加载后的 scene，直接传给 BatchedCarModel
 manager.registerModel('chevrolet_m1009', (key, primitive, data) => {
   const model = new BatchedCarModel()
-  model.initFromScene(primitive, data, key, data.size)
+  model.init(key, data, primitive)
   return model
 })
 manager.registerModel('test', (key, primitive, data) => {
   const model = new BatchedCarModel()
-  model.initFromScene(primitive, data, key, data.size)
+  model.init(key, data, primitive)
   return model
 })
 manager.registerModel('gt_001_vehicle', (key, primitive, data) => {
   const model = new BatchedCarModel()
-  model.initFromScene(primitive, data, key, data.size)
+  model.init(key, data, primitive)
   return model
 })
 
@@ -223,6 +229,25 @@ const resetCamera = () => {
   manager.camera.position.set(100, 50, 100)
   manager.controls.target.set(0, 0, 0)
   manager.controls.update()
+}
+
+const onClickCanvas = (event: MouseEvent) => {
+  if (!canvasContainer.value) return
+  const rect = canvasContainer.value.getBoundingClientRect()
+  const pointer = new THREE.Vector2(
+    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+    -((event.clientY - rect.top) / rect.height) * 2 + 1,
+  )
+  raycaster.setFromCamera(pointer, manager.camera)
+
+  const hits = raycastModels(manager.modelMap, raycaster)
+  if (hits.length > 0) {
+    const h = hits[0]
+    hitInfo.value = `命中: ${h.key}  modelKey=${h.data?.type ?? '?'}`
+    console.log('点击了实例:', h.key, h.data)
+  } else {
+    hitInfo.value = '未命中任何实例'
+  }
 }
 
 const init = async () => {
