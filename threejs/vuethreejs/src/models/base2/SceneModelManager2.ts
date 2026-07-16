@@ -54,6 +54,9 @@ export default class SceneModelManager2 {
     controls: OrbitControls = new OrbitControls(this.camera, this.renderer.domElement);
     stats: Stats = new Stats();
 
+    /** 自定义渲染函数（用于 EffectComposer 等后处理），若设置则替代默认的 renderer.render */
+    customRender: (() => void) | null = null;
+
     // ======================== 模型容器 ========================
 
     /**
@@ -146,7 +149,11 @@ export default class SceneModelManager2 {
             this.controls.update();
             this.staticModels.forEach(m => m.animate());
             this.stats.update();
-            this.renderer.render(this.scene, this.camera);
+            if (this.customRender) {
+                this.customRender();
+            } else {
+                this.renderer.render(this.scene, this.camera);
+            }
         };
         animate();
     }

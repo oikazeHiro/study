@@ -28,6 +28,10 @@ import {getStaticUrl} from "@/utils/util";
 import {ModelInstanceData} from "@/models/base2/ManagedModel";
 import {THREE} from '@/utils/threeModules'
 import {raycastModels} from '@/models/base2/RaycastHelper'
+import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js'
+import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js'
+import {OutlinePass} from 'three/examples/jsm/postprocessing/OutlinePass.js'
+import {OutputPass} from 'three/examples/jsm/postprocessing/OutputPass.js'
 
 const canvasContainer = ref<HTMLElement | null>(null)
 const loaded = ref(false)
@@ -35,6 +39,13 @@ const allVisible = ref(true)
 const visibles = reactive<Record<string, boolean>>({})
 const hitInfo = ref('点击模型查看实例信息')
 const raycaster = new THREE.Raycaster()
+
+// 后处理 & 选中描边
+let composer: EffectComposer
+let outlinePass: OutlinePass
+/** 当前选中的描边代理 Mesh */
+let outlineProxies: THREE.Object3D[] = []
+let prevSelection: string | null = null
 
 const testData: SceneData = {
   // sanHuoShip: {
@@ -231,6 +242,54 @@ const resetCamera = () => {
   manager.controls.update()
 }
 
+/** 清除上一次的描边代理 */
+const clearOutline = () => {
+  for (const obj of outlineProxies) {
+    const idx = outlinePass.selectedObjects.indexOf(obj)
+    if (idx !== -1) outlinePass.selectedObjects.splice(idx, 1)
+    obj.parent?.remove(obj)
+  }
+  outlineProxies = []
+}
+
+/** 创建描边代理：克隆原始 GLB 放到实例位置 */
+const createOutlineProxy = (modelKey: string, instanceKey: string, data: any) => {
+  // 从 data 中读取变换
+  const pos = data.position ?? {x: 0, y: 0, z: 0}
+  const rot = data.rotation ?? {x: 0, y: 0, z: 0}
+  const scl = data.scale ?? {x: 1, y: 1, z: 1}
+
+  // 获取原始 GLB primitive
+  const primitive = manager.loader.getModel(modelKey)
+  if (!primitive) return
+
+  const clone = primitive.clone(true)
+  // 重置内部子节点缩放（GLB 导出可能自带 scale，如 container 的 0.5）
+  // 保留子节点 position（多部件模型需要相对位置），然后 root 统一应用实例变换
+  clone.traverse((child) => {
+    child.scale.set(1, 1, 1)
+  })
+  clone.position.set(pos.x, pos.y, pos.z)
+  clone.rotation.set(rot.x, rot.y, rot.z)
+  clone.scale.set(scl.x, scl.y, scl.z)
+
+  // 所有子节点关掉动画 / 自发光
+  clone.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh) {
+      const mesh = child as THREE.Mesh
+      if (mesh.material) {
+        const mat = mesh.material as THREE.MeshStandardMaterial
+        mat.emissive = new THREE.Color(0xffffff)
+        mat.emissiveIntensity = 0
+      }
+    }
+  })
+
+  outlineProxies.push(clone)
+  outlinePass.selectedObjects.push(clone)
+  manager.scene.add(clone)
+}
+
 const onClickCanvas = (event: MouseEvent) => {
   if (!canvasContainer.value) return
   const rect = canvasContainer.value.getBoundingClientRect()
@@ -243,10 +302,26 @@ const onClickCanvas = (event: MouseEvent) => {
   const hits = raycastModels(manager.modelMap, raycaster)
   if (hits.length > 0) {
     const h = hits[0]
-    hitInfo.value = `命中: ${h.key}  modelKey=${h.data?.type ?? '?'}`
-    console.log('点击了实例:', h.key, h.data)
+    // 找到该实例属于哪个 modelMap 的 key
+    let modelKey = ''
+    for (const [mk, m] of manager.modelMap) {
+      if ((m as any).dataMap?.has(h.key)) {
+        modelKey = mk
+        break
+      }
+    }
+
+    hitInfo.value = `命中: ${h.key}  modelKey=${modelKey || '?'}`
+    console.log('点击了实例:', h.key, 'modelKey:', modelKey, h.data)
+
+    // 更新描边
+    clearOutline()
+    if (modelKey) {
+      createOutlineProxy(modelKey, h.key, h.data)
+    }
   } else {
     hitInfo.value = '未命中任何实例'
+    clearOutline()
   }
 }
 
@@ -265,6 +340,23 @@ const init = async () => {
   canvasContainer.value.appendChild(manager.stats.domElement)
   await manager.addLoaderSceneByData(testData)
 
+  // ================= 后处理：Outline 描边 =================
+  composer = new EffectComposer(manager.renderer)
+  composer.addPass(new RenderPass(manager.scene, manager.camera))
+  outlinePass = new OutlinePass(
+    new THREE.Vector2(w, h),
+    manager.scene,
+    manager.camera,
+  )
+  outlinePass.edgeStrength = 4
+  outlinePass.edgeGlow = 0.5
+  outlinePass.edgeThickness = 2
+  outlinePass.visibleEdgeColor = new THREE.Color(0xffffff)
+  outlinePass.hiddenEdgeColor = new THREE.Color(0xffffff)
+  composer.addPass(outlinePass)
+  composer.addPass(new OutputPass())
+  manager.customRender = () => composer.render()
+
   for (const instances of Object.values(testData)) {
     for (const key of Object.keys(instances)) {
       visibles[key] = true
@@ -279,6 +371,7 @@ const handleResize = () => {
   manager.camera.aspect = w / h
   manager.camera.updateProjectionMatrix()
   manager.setRendererSize(w, h)
+  if (composer) composer.setSize(w, h)
 }
 
 const debouncedResize = debounce(handleResize, 100)
