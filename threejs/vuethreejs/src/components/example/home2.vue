@@ -25,7 +25,7 @@ import ContainerModel from "@/models/loaderModel/ContainerModel";
 import BatchedCarModel from "@/models/loaderModel/BatchedCarModel";
 import { BatchedMeshFoundation } from "@/models/base/BatchedMeshFoundation";
 import {getStaticUrl} from "@/utils/util";
-import {ModelInstanceData} from "@/models/base2/ManagedModel";
+import {ModelInstanceData} from "@/models/base/ManagedModel";
 import {THREE} from '@/utils/threeModules'
 import {raycastModels} from '@/models/base2/RaycastHelper'
 import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js'

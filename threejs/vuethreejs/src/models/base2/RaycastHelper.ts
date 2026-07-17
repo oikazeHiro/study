@@ -1,5 +1,5 @@
 import {THREE} from '@/utils/threeModules'
-import {ManagedModel} from './ManagedModel'
+import {ManagedModel} from '@/models/base/ManagedModel'
 import {InstancedMeshFoundation} from '../base/InstancedMeshFoundation'
 import {AtlasInstancedMeshFoundation} from '../base/AtlasInstancedMeshFoundation'
 import {BatchedMeshFoundation} from '../base/BatchedMeshFoundation'

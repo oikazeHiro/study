@@ -1,5 +1,5 @@
 import {THREE} from '@/utils/threeModules'
-import {ManagedModel, ModelInstanceData} from './ManagedModel'
+import {ManagedModel, ModelInstanceData} from '@/models/base/ManagedModel'
 
 /**
  * 加载器模型的工厂函数。

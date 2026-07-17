@@ -1,9 +1,8 @@
 import {THREE} from '@/utils/threeModules'
 
 /**
- * 统一实例数据格式。
+ * 统一实例数据格式。所有字段可选，调用方只需传入需要变更的字段。
  *
- * 所有字段均为可选，调用方只需传入需要变更的字段。
  * 四种模型类型（ModsMethodStandardImpl / InstancedMeshFoundation / BatchedMeshFoundation / AtlasInstancedMeshFoundation）
  * 都接收此格式的数据，字段说明：
  *
@@ -33,51 +32,50 @@ export interface ModelInstanceData {
 /**
  * 统一模型操作接口。
  *
- * 四种模型类型都实现此接口，上层（SceneModelManager）只需面向它编程，
- * 无需区分底层是 clone 式（ModsMethodStandardImpl）还是实例化式（InstancedMeshFoundation / BatchedMeshFoundation）。
+ * 所有模型类型（clone / InstancedMesh / BatchedMesh）都实现此接口，
+ * 上层只需面向它编程，无需区分底层实现细节。
+ *
+ * 注意：dispose 语义统一为"释放所有资源"，没有逐实例销毁。
+ * 逐实例销毁是 clone 模型的私有特性，不由本接口暴露。
  */
 export interface ManagedModel {
-    /**
-     * 添加到场景。
-     */
+    /** 添加到场景 */
     addScene(scene: THREE.Scene): this;
 
-    /**
-     * 全量更新所有实例。
-     * dataMap 的 key 为实例标识，value 为 {@link ModelInstanceData}。
-     */
+    /** 全量更新所有实例 */
     updateAll(dataMap: Map<string, ModelInstanceData>): this;
 
-    /**
-     * 设置单个实例的位置。
-     */
+    /** 设置单个实例的位置 */
     setPosition(name: string, position: THREE.Vector3): this;
 
-    /**
-     * 设置单个实例的旋转。
-     */
+    /** 设置单个实例的旋转 */
     setRotation(name: string, rotation: THREE.Euler): this;
 
-    /**
-     * 设置单个实例的缩放。
-     */
+    /** 设置单个实例的缩放 */
     setScale(name: string, scale: THREE.Vector3): this;
 
-    /**
-     * 设置单个实例的可见性。
-     */
+    /** 设置单个实例的可见性 */
     setVisible(name: string, visible: boolean): this;
 
-    /**
-     * 设置单个实例的颜色。
-     * 非 InstancedMesh 的实现（ModsMethodStandardImpl）会遍历 child Mesh 修改材质颜色。
-     */
+    /** 设置单个实例全部材质的颜色 */
     setColor(name: string, color: THREE.Color): this;
 
-    /**
-     * 释放所有实例的资源。
-     * ModsMethodStandardImpl 中对应 disposeAll() 语义；
-     * InstancedMeshFoundation / BatchedMeshFoundation 中对应 dispose() 语义。
-     */
+    /** 设置单个实例指定材质名称的颜色（多材质模型用） */
+    setColor(name: string, material: string, color: THREE.Color): this;
+
+    /** 释放所有实例的资源 */
     disposeAll(): void;
+
+    /**
+     * 【可选】返回参与射线检测的 Object3D 列表。
+     * 复合模型（如 BatchedGroupModel 内含多个 BatchedMesh）应实现此方法。
+     */
+    getRaycastTargets?(): THREE.Object3D[];
+
+    /**
+     * 【可选】将射线命中结果解析为实例标识与数据。
+     * @param intersect Raycaster.intersectObjects 返回的命中条目
+     * @returns { key, data } 或 null
+     */
+    resolveHit?(intersect: THREE.Intersection<THREE.Object3D>): { key: string; data: any } | null;
 }

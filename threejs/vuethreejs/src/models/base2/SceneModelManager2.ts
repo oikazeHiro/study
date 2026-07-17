@@ -2,7 +2,7 @@ import {OrbitControls, Stats, THREE} from '@/utils/threeModules'
 import ModelStandardLoader from '../base/ModelStandardLoader';
 import ModsMethodStandardImpl from '../base/ModsMethodStandardImpl';
 import StaticModel from '@/models/base/StaticModel';
-import {ManagedModel, ModelInstanceData} from './ManagedModel'
+import {ManagedModel, ModelInstanceData} from '@/models/base/ManagedModel'
 import {ModelRegistry, LoaderModelFactory} from './ModelRegistry'
 
 /**

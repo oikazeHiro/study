@@ -126,19 +126,47 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
         return this;
     }
 
-    setColor(name: string, color: THREE.Color): this {
-        const model = this.group.getObjectByName(name);
-        if (model) {
-            model.traverse((child) => {
+    setColor(name: string, color: THREE.Color): this;
+    setColor(name: string, material: string, color: THREE.Color): this;
+    setColor(name: string, materialOrColor: string | THREE.Color, color?: THREE.Color): this {
+        if (color !== undefined) {
+            // 三参数：(name, material, color) — 只设置指定子节点
+            const model = this.group.getObjectByName(name);
+            if (model) {
+                const child = model.getObjectByName(materialOrColor as string);
                 if (child instanceof THREE.Mesh) {
                     const mat = child.material;
                     if (Array.isArray(mat)) {
-                        mat.forEach(m => { if (m.color) m.color.copy(color); });
+                        mat.forEach(m => { if (m.color) m.color.copy(color!); });
                     } else if (mat.color) {
-                        mat.color.copy(color);
+                        mat.color.copy(color!);
                     }
+                } else {
+                    // 容错：没找到指定子节点，回退到全部设置
+                    model.traverse((child) => {
+                        if (child instanceof THREE.Mesh) {
+                            const mats = Array.isArray(child.material) ? child.material : [child.material];
+                            mats.forEach(m => { if (m.color) m.color.copy(color!); });
+                        }
+                    });
                 }
-            });
+            }
+        } else {
+            // 两参数：(name, color) — 设置所有子节点
+            const model = this.group.getObjectByName(name);
+            if (model) {
+                model.traverse((child) => {
+                    if (child instanceof THREE.Mesh) {
+                        const mat = child.material;
+                        const c = materialOrColor as THREE.Color;
+                        if (Array.isArray(mat)) {
+                            mat.forEach(m => { if (m.color) m.color.copy(c); });
+                        } else if (mat.color) {
+                            mat.color.copy(c);
+                        }
+                    }
+                });
+            }
         }
         return this;
     }

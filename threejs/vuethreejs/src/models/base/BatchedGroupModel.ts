@@ -55,6 +55,8 @@ export class BatchedGroupModel implements ManagedModel {
      * 用于射线检测时快速定位命中的实例。
      */
     instanceIdToKey: Map<string, string> = new Map()
+    /** 所有子 BatchedMesh 的容器 Group，方便 DevTools 观察 */
+    group: THREE.Group = new THREE.Group()
     /** 变换缓存 */
     protected transforms: Map<string, { position: xyz; rotation: xyz; scale: xyz; visible: boolean }> = new Map()
     protected _dummy = new THREE.Object3D()
@@ -72,6 +74,7 @@ export class BatchedGroupModel implements ManagedModel {
      */
     init(key: string, dataMap: Map<string, any>, primitive: THREE.Object3D): this {
         this.type = key
+        this.key = key
         this.dataMap = dataMap
         this.num = dataMap.size
         this.autoScale = this.calcAutoScale(primitive)
@@ -84,7 +87,9 @@ export class BatchedGroupModel implements ManagedModel {
 
         this.subs = []
         this.instanceMap.clear()
+        this.instanceIdToKey.clear()
         this.transforms.clear()
+        this.group.name = this.key
 
         for (let si = 0; si < groups.length; si++) {
             const g = groups[si]
@@ -278,12 +283,22 @@ export class BatchedGroupModel implements ManagedModel {
     // ======================== ManagedModel ========================
 
     addScene(scene: THREE.Scene): this {
-        for (const s of this.subs) s.addScene(scene)
+        // 先将所有子 BatchedMesh 加到 group（DevTools 中可折叠观察）
+        for (const s of this.subs) {
+            if (s.batchedMesh.parent !== this.group) {
+                this.group.add(s.batchedMesh)
+            }
+        }
+        if (this.group.parent !== scene) {
+            scene.add(this.group)
+        }
         return this
     }
 
     removeScene(scene: THREE.Scene): this {
-        for (const s of this.subs) s.removeScene(scene)
+        if (this.group.parent === scene) {
+            scene.remove(this.group)
+        }
         return this
     }
 
@@ -311,14 +326,39 @@ export class BatchedGroupModel implements ManagedModel {
         return this
     }
 
-    setColor(n: string, c: THREE.Color): this {
+    setColor(n: string, c: THREE.Color): this;
+    setColor(n: string, material: string, c: THREE.Color): this;
+    setColor(n: string, moc: string | THREE.Color, c?: THREE.Color): this {
         const refs = this.instanceMap.get(n)
         if (!refs) return this
-        for (const ref of refs) {
-            const sub = this.subs[ref.subIndex]
-            for (const iid of ref.instanceIds) sub.batchedMesh.setColorAt(iid, c)
+        if (c !== undefined) {
+            // 三参数：(name, material, color) — 只设置匹配材质名称的子模型
+            const matName = moc as string
+            for (const ref of refs) {
+                const sub = this.subs[ref.subIndex]
+                if (matName === this.getSubMaterialName(sub)) {
+                    for (const iid of ref.instanceIds) sub.batchedMesh.setColorAt(iid, c)
+                    return this
+                }
+            }
+        } else {
+            // 两参数：(name, color) — 设置所有子模型
+            const color = moc as THREE.Color
+            for (const ref of refs) {
+                const sub = this.subs[ref.subIndex]
+                for (const iid of ref.instanceIds) sub.batchedMesh.setColorAt(iid, color)
+            }
         }
         return this
+    }
+
+    /** 获取子模型的材质名称（用于 setColor(name, material, color) 的 material 匹配） */
+    private getSubMaterialName(sub: BatchedMeshFoundation): string {
+        const mat = sub.batchedMesh.material
+        if (Array.isArray(mat)) {
+            return mat[0]?.name || ''
+        }
+        return mat?.name || ''
     }
 
     getInstanceCount(): number { return this.num }
@@ -334,6 +374,7 @@ export class BatchedGroupModel implements ManagedModel {
         this.instanceIdToKey.clear()
         this.transforms.clear()
         this.dataMap.clear()
+        if (this.group.parent) this.group.parent.remove(this.group)
     }
 }
 

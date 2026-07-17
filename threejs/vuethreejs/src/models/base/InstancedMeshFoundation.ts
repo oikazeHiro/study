@@ -281,8 +281,11 @@ export class InstancedMeshFoundation implements ManagedModel {
         return this.updateOneVisible({ id: name, visible });
     }
 
-    setColor(name: string, color: THREE.Color): this {
-        return this.updateOneColor({ id: name, color });
+    setColor(name: string, color: THREE.Color): this;
+    setColor(name: string, _material: string, color: THREE.Color): this;
+    setColor(name: string, _materialOrColor: string | THREE.Color, color?: THREE.Color): this {
+        const c = color ?? (_materialOrColor as THREE.Color);
+        return this.updateOneColor({ id: name, color: c });
     }
 
     // ======================== 批量更新 ========================

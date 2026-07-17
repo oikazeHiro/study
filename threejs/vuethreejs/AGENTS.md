@@ -17,6 +17,8 @@ No test, lint, or format commands exist — no tool is configured for any of tho
 | **New (preferred)** | `ModelStandardLoader` (`models/base/`) | `ModsMethodStandard` interface / `ModsMethodStandardImpl` default | `SceneModelManager` (`models/base/`) | Data-driven API |
 | **Old** | `ModelLoader` (`models/base/`) | `HdMod` interface / `HdModImpl` | Manual in component | Constructor takes scene/renderer/clock |
 
+There is also a `base2/` system (`SceneModelManager2`) which unifies all model types into a single `modelMap` with a `ModelRegistry` factory pattern. It uses a stricter `ManagedModel` interface (no `as any` casts). New code may target either system; `base2/` is the cleaner path forward.
+
 Add new models to the **new** system. The old system still exists in `codeModel/` and `other/` directories.
 
 ### New system model files
@@ -74,7 +76,7 @@ Example components follow: `onMounted` → `initThree()` → `initScene()` → `
 ## TypeScript quirks
 
 - `strictPropertyInitialization: false` and `noUnusedLocals: false` — the compiler will NOT catch many uninitialized properties or dead imports.
-- `types/ammo.d.ts` provides Ammo type stub at repo root.
+- `types/ammo.d.ts` provides Ammo type stub (in `types/`, not repo root).
 - `tsconfig.json` paths alias `three/examples/jsm/*` to `node_modules/`.
 
 ## Physics dependencies

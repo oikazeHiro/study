@@ -183,7 +183,11 @@ export class BatchedMeshFoundation implements ManagedModel {
     setRotation(n: string, r: THREE.Euler): this { return this.updateOneRotation({ id: n, rotation: r }) }
     setScale(n: string, s: THREE.Vector3): this { return this.updateOneScale({ id: n, scale: s }) }
     setVisible(n: string, v: boolean): this { return this.updateOneVisible({ id: n, visible: v }) }
-    setColor(n: string, c: THREE.Color): this { return this.updateOneColor({ id: n, color: c }) }
+    setColor(n: string, c: THREE.Color): this;
+    setColor(n: string, _material: string, c: THREE.Color): this;
+    setColor(n: string, _moc: string | THREE.Color, c?: THREE.Color): this {
+        return this.updateOneColor({ id: n, color: c ?? (_moc as THREE.Color) })
+    }
 
     // ======================== 增删 ========================
 
