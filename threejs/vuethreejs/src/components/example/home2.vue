@@ -28,10 +28,7 @@ import {getStaticUrl} from "@/utils/util";
 import {ModelInstanceData} from "@/models/base/ManagedModel";
 import {THREE} from '@/utils/threeModules'
 import {raycastModels} from '@/models/base2/RaycastHelper'
-import {EffectComposer} from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import {RenderPass} from 'three/examples/jsm/postprocessing/RenderPass.js'
-import {OutlinePass} from 'three/examples/jsm/postprocessing/OutlinePass.js'
-import {OutputPass} from 'three/examples/jsm/postprocessing/OutputPass.js'
+import {OutlineEffectManager} from '@/models/base2/OutlineEffectManager'
 
 const canvasContainer = ref<HTMLElement | null>(null)
 const loaded = ref(false)
@@ -41,11 +38,7 @@ const hitInfo = ref('点击模型查看实例信息')
 const raycaster = new THREE.Raycaster()
 
 // 后处理 & 选中描边
-let composer: EffectComposer
-let outlinePass: OutlinePass
-/** 当前选中的描边代理 Mesh */
-let outlineProxies: THREE.Object3D[] = []
-let prevSelection: string | null = null
+let outlineManager: OutlineEffectManager
 
 const testData: SceneData = {
   // sanHuoShip: {
@@ -64,7 +57,7 @@ const testData: SceneData = {
  *   10×10 = 100 实例 → ~5M 顶点/车型 → ~160 MB/车型
  *   100×100 = 10,000 实例 → ~500M 顶点/车型 → ~16 GB/车型  ⚠️ 极高
  */
-const CAR_GRID = 20       // 网格边长（10×10=100 辆/车型）
+const CAR_GRID = 50       // 网格边长（10×10=100 辆/车型）
 const CAR_SPACING = 5     // 车辆间距
 const CAR_HEIGHT = 50   // 生成y 的高度
 
@@ -78,6 +71,7 @@ const addCarGrid = (modelKey: string, offsetZ: number) => {
         rotation: { x: 0, y: 0, z: 0 },
         scale: { x: 1, y: 1, z: 1 },
         status: 'normal',
+        colorCode: i%5
       }
     }
   }
@@ -106,11 +100,7 @@ const testDataAddData = () => {
   // 输出 container 占多少内存
 
   testData.container = Object.fromEntries(container)
-  // 汽车网格：3 种车型，各占一片区域
-  // z 轴偏移让不同车型错开，避免重叠
-  addCarGrid('chevrolet_m1009', CAR_GRID * CAR_SPACING * 0)
-  // addCarGrid('test', CAR_GRID * CAR_SPACING * 1)
-  addCarGrid('gt_001_vehicle',    CAR_GRID * CAR_SPACING * 2)
+  addCarGrid('gt_001_vehicle',    CAR_GRID * CAR_SPACING)
 }
 
 const testConfig: OrbitControlOptions = {
@@ -242,54 +232,6 @@ const resetCamera = () => {
   manager.controls.update()
 }
 
-/** 清除上一次的描边代理 */
-const clearOutline = () => {
-  for (const obj of outlineProxies) {
-    const idx = outlinePass.selectedObjects.indexOf(obj)
-    if (idx !== -1) outlinePass.selectedObjects.splice(idx, 1)
-    obj.parent?.remove(obj)
-  }
-  outlineProxies = []
-}
-
-/** 创建描边代理：克隆原始 GLB 放到实例位置 */
-const createOutlineProxy = (modelKey: string, instanceKey: string, data: any) => {
-  // 从 data 中读取变换
-  const pos = data.position ?? {x: 0, y: 0, z: 0}
-  const rot = data.rotation ?? {x: 0, y: 0, z: 0}
-  const scl = data.scale ?? {x: 1, y: 1, z: 1}
-
-  // 获取原始 GLB primitive
-  const primitive = manager.loader.getModel(modelKey)
-  if (!primitive) return
-
-  const clone = primitive.clone(true)
-  // 重置内部子节点缩放（GLB 导出可能自带 scale，如 container 的 0.5）
-  // 保留子节点 position（多部件模型需要相对位置），然后 root 统一应用实例变换
-  clone.traverse((child) => {
-    child.scale.set(1, 1, 1)
-  })
-  clone.position.set(pos.x, pos.y, pos.z)
-  clone.rotation.set(rot.x, rot.y, rot.z)
-  clone.scale.set(scl.x, scl.y, scl.z)
-
-  // 所有子节点关掉动画 / 自发光
-  clone.traverse((child) => {
-    if ((child as THREE.Mesh).isMesh) {
-      const mesh = child as THREE.Mesh
-      if (mesh.material) {
-        const mat = mesh.material as THREE.MeshStandardMaterial
-        mat.emissive = new THREE.Color(0xffffff)
-        mat.emissiveIntensity = 0
-      }
-    }
-  })
-
-  outlineProxies.push(clone)
-  outlinePass.selectedObjects.push(clone)
-  manager.scene.add(clone)
-}
-
 const onClickCanvas = (event: MouseEvent) => {
   if (!canvasContainer.value) return
   const rect = canvasContainer.value.getBoundingClientRect()
@@ -315,13 +257,15 @@ const onClickCanvas = (event: MouseEvent) => {
     console.log('点击了实例:', h.key, 'modelKey:', modelKey, h.data)
 
     // 更新描边
-    clearOutline()
     if (modelKey) {
-      createOutlineProxy(modelKey, h.key, h.data)
+      const primitive = manager.loader.getModel(modelKey)
+      if (primitive) outlineManager.setSelectionFromPrimitive(primitive, h.data, manager.scene)
+    } else {
+      outlineManager.clearSelection()
     }
   } else {
     hitInfo.value = '未命中任何实例'
-    clearOutline()
+    outlineManager.clearSelection()
   }
 }
 
@@ -341,21 +285,8 @@ const init = async () => {
   await manager.addLoaderSceneByData(testData)
 
   // ================= 后处理：Outline 描边 =================
-  composer = new EffectComposer(manager.renderer)
-  composer.addPass(new RenderPass(manager.scene, manager.camera))
-  outlinePass = new OutlinePass(
-    new THREE.Vector2(w, h),
-    manager.scene,
-    manager.camera,
-  )
-  outlinePass.edgeStrength = 4
-  outlinePass.edgeGlow = 0.5
-  outlinePass.edgeThickness = 2
-  outlinePass.visibleEdgeColor = new THREE.Color(0xffffff)
-  outlinePass.hiddenEdgeColor = new THREE.Color(0xffffff)
-  composer.addPass(outlinePass)
-  composer.addPass(new OutputPass())
-  manager.customRender = () => composer.render()
+  outlineManager = new OutlineEffectManager(manager.scene, manager.camera, manager.renderer, w, h)
+  manager.customRender = outlineManager.render
 
   for (const instances of Object.values(testData)) {
     for (const key of Object.keys(instances)) {
@@ -371,7 +302,7 @@ const handleResize = () => {
   manager.camera.aspect = w / h
   manager.camera.updateProjectionMatrix()
   manager.setRendererSize(w, h)
-  if (composer) composer.setSize(w, h)
+  if (outlineManager) outlineManager.setSize(w, h)
 }
 
 const debouncedResize = debounce(handleResize, 100)
@@ -384,6 +315,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', debouncedResize)
+  outlineManager?.dispose()
   manager.disposeAll()
 })
 </script>

@@ -1,5 +1,6 @@
 import {BatchedGroupModel} from '@/models/base/BatchedGroupModel'
 
+import {THREE,Scene} from '@/utils/threeModules'
 /**
  * 汽车模型的 BatchedMesh 适配器。
  *
@@ -15,4 +16,22 @@ import {BatchedGroupModel} from '@/models/base/BatchedGroupModel'
  */
 export default class BatchedCarModel extends BatchedGroupModel {
     key = 'batchedCar'
+
+    constructor() {
+        super();
+    }
+
+    addScene(scene: Scene): this {
+        super.addScene(scene)
+        this.updateCarsColor()
+        return this;
+    }
+
+    updateCarsColor(){
+        const colors:string[] = ['#ffffff','#ef0707',
+            '#1f1f1f',"#400394",'#1705be']
+        this.dataMap.forEach((val,key)=>{
+            this.setColor(key,'Body',new THREE.Color(colors[val.colorCode]))
+        })
+    }
 }
