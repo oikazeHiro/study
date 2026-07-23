@@ -28,8 +28,13 @@ export default class BatchedCarModel extends BatchedGroupModel {
     }
 
     updateCarsColor(){
-        const colors:string[] = ['#ffffff','#ef0707',
-            '#1f1f1f',"#400394",'#1705be']
+        const colors:string[] = [
+            '#ffffff',
+            '#ef0707',
+            '#1f1f1f',
+            "#400394",
+            '#1705be',
+        ]
         this.dataMap.forEach((val,key)=>{
             this.setColor(key,'Body',new THREE.Color(colors[val.colorCode]))
         })
