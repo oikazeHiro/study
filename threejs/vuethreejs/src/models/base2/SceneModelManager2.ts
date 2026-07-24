@@ -57,6 +57,9 @@ export default class SceneModelManager2 {
     /** 自定义渲染函数（用于 EffectComposer 等后处理），若设置则替代默认的 renderer.render */
     customRender: (() => void) | null = null;
 
+    /** 上一帧的时间戳（毫秒），用于手动计算 delta */
+    private _prevTime: number = 0;
+
     // ======================== 模型容器 ========================
 
     /**
@@ -127,7 +130,7 @@ export default class SceneModelManager2 {
         if (this.onProgressCallback) {
             this.loader.setOnProgressCallback(this.onProgressCallback);
         }
-        this.camera.position.set(5, 5, 10);
+        this.camera.position.set(0, 100, 0);
         this.camera.lookAt(0, 0, 0);
         this.scene.add(new THREE.AmbientLight(0xffffff, 0.4));
         this.scene.add(new THREE.DirectionalLight(0xffffff, 0.5));
@@ -144,8 +147,19 @@ export default class SceneModelManager2 {
     }
 
     private startAnimationLoop(): void {
+        this._prevTime = performance.now();
         const animate = () => {
             this.animationId = requestAnimationFrame(animate);
+
+            // 手动计算 delta 秒数（Clock 已在 r184 中废弃）
+            const now = performance.now();
+            // const delta = (now - this._prevTime) / 1000;
+            const delta = Math.min((now - this._prevTime) / 1000, 0.05);
+            this._prevTime = now;
+
+            // 驱动模型动画（ModsMethodStandardImpl 等实现了 update 的模型）
+            this.modelMap.forEach(model => model.update?.(delta));
+
             this.controls.update();
             this.staticModels.forEach(m => m.animate());
             this.stats.update();
@@ -185,6 +199,8 @@ export default class SceneModelManager2 {
 
             const factory = this.registry.get(key) ?? this.defaultFactory(key);
             const model = await factory(key, primitive, mapData);
+            // 可选方法：只有实现了 setAnimationClips 的模型（如 ModsMethodStandardImpl）才会执行
+            model.setAnimationClips?.(this.loader.getAnimations(key) ?? []);
             model.addScene(this.scene);
             this.modelMap.set(key, model);
         }

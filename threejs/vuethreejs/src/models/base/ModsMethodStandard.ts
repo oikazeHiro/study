@@ -109,7 +109,7 @@ export default interface ModsMethodStandard {
      * @param modelMove - 移动序列数组，定义模型的移动路径和方式
      * @returns 返回移动操作的结果
      */
-    modelMove(name: string, modelMove: ModelMove[]): any;
+    modelMove(name: string, modelMove: ModelMove[]): this;
 
     /**
      * 释放指定模型的资源
