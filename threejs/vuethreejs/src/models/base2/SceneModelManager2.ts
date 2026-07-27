@@ -143,9 +143,21 @@ export default class SceneModelManager2 {
         }
     }
 
+    private _prevTime: number = 0;
+
     private startAnimationLoop(): void {
+        this._prevTime = performance.now();
         const animate = () => {
             this.animationId = requestAnimationFrame(animate);
+
+            // 手动计算 delta 秒数
+            const now = performance.now();
+            const delta = Math.min((now - this._prevTime) / 1000, 0.05);
+            this._prevTime = now;
+
+            // 驱动模型动画（ModsMethodStandardImpl 等实现了 update 的模型）
+            this.modelMap.forEach(model => model.update?.(delta));
+
             this.controls.update();
             this.staticModels.forEach(m => m.animate());
             this.stats.update();
@@ -185,6 +197,7 @@ export default class SceneModelManager2 {
 
             const factory = this.registry.get(key) ?? this.defaultFactory(key);
             const model = await factory(key, primitive, mapData);
+            model.setAnimationClips?.(this.loader.getAnimations(key) ?? []);
             model.addScene(this.scene);
             this.modelMap.set(key, model);
         }

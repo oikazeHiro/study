@@ -12,6 +12,9 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
     front: THREE.Vector3 = new THREE.Vector3(0, 0, 1)
     animationClips: Array<THREE.AnimationClip> = [];
 
+    /** 实例 key → 克隆模型的映射，用于 O(1) 查找 */
+    private _modelMap: Map<string, THREE.Object3D> = new Map();
+
     constructor() {
         this.AnimationActions = [];
         this.dataMap = new Map();
@@ -51,8 +54,9 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
         } else {
             model.visible = value?.status === 'normal';
         }
-        model.uuid = key;
-        model.name = model.uuid;
+        model.name = this.key + '_' + key;
+        model.uuid = model.name;
+        this._modelMap.set(key, model);
         this.group.add(model);
         return model;
     }
@@ -103,22 +107,22 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
     }
 
     setPosition(name: string, position: THREE.Vector3): this {
-        this.group.getObjectByName(name)?.position.copy(position);
+        this._modelMap.get(name)?.position.copy(position);
         return this;
     }
 
     setRotation(name: string, rotation: THREE.Euler): this {
-        this.group.getObjectByName(name)?.rotation.copy(rotation);
+        this._modelMap.get(name)?.rotation.copy(rotation);
         return this;
     }
 
     setScale(name: string, scale: THREE.Vector3): this {
-        this.group.getObjectByName(name)?.scale.copy(scale);
+        this._modelMap.get(name)?.scale.copy(scale);
         return this;
     }
 
     setVisible(name: string, visible: boolean): this {
-        const objectByName = this.group.getObjectByName(name);
+        const objectByName = this._modelMap.get(name);
         console.log("要隐藏的模型",objectByName)
         if (objectByName) {
             objectByName.visible = visible;
@@ -131,7 +135,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
     setColor(name: string, materialOrColor: string | THREE.Color, color?: THREE.Color): this {
         if (color !== undefined) {
             // 三参数：(name, material, color) — 只设置指定子节点
-            const model = this.group.getObjectByName(name);
+            const model = this._modelMap.get(name);
             if (model) {
                 const child = model.getObjectByName(materialOrColor as string);
                 if (child instanceof THREE.Mesh) {
@@ -153,7 +157,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
             }
         } else {
             // 两参数：(name, color) — 设置所有子节点
-            const model = this.group.getObjectByName(name);
+            const model = this._modelMap.get(name);
             if (model) {
                 model.traverse((child) => {
                     if (child instanceof THREE.Mesh) {
@@ -181,7 +185,7 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
     }
 
     getMaterial(modelName: string, materialName: string): THREE.Material[] {
-        const model = this.group.getObjectByName(modelName);
+        const model = this._modelMap.get(modelName);
         if (model) {
             const object = model.getObjectByName(materialName);
             // 检查对象是否为网格对象
@@ -200,13 +204,13 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
     }
 
     getMesh(modelName: string, meshName: string): THREE.Object3D | null {
-        const model = this.group.getObjectByName(modelName);
+        const model = this._modelMap.get(modelName);
         const mesh = model?.getObjectByName(meshName);
         return mesh || null;  // 明确返回 null 而不是 undefined
     }
 
     dispose(name: string): void {
-        const model = this.group.getObjectByName(name);
+        const model = this._modelMap.get(name);
         if (model) {
             model.traverse((child) => {
                 if (child instanceof THREE.Mesh) {
@@ -219,10 +223,12 @@ export default class ModsMethodStandardImpl implements ModsMethodStandard, Manag
                 }
             });
             this.group.remove(model);
+            this._modelMap.delete(name);
         }
     }
 
     disposeAll(): void {
+        this._modelMap.clear();
         this.dataMap.clear();
         this.group.traverse((child) => {
             if (child instanceof THREE.Mesh) {

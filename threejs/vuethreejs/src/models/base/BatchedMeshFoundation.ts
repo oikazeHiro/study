@@ -243,7 +243,8 @@ export class BatchedMeshFoundation implements ManagedModel {
         if (value.color !== undefined) this.batchedMesh.setColorAt(iid, new THREE.Color(value.color))
     }
 
-    update(): this { this.dataMap.forEach((_, k) => this.composeMatrix(k)); return this }
+    /** 空操作：BatchedMeshFoundation 不需要每帧重算矩阵 */
+    update(_delta?: number): this { return this }
 
     // ======================== 场景 & 生命周期 ========================
 

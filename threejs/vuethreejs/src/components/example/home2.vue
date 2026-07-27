@@ -100,7 +100,7 @@ const testDataAddData = () => {
   // 输出 container 占多少内存
 
   testData.container = Object.fromEntries(container)
-  addCarGrid('gt_001_vehicle', 0)
+  // addCarGrid('gt_001_vehicle', 0)
 }
 
 const testConfig: OrbitControlOptions = {

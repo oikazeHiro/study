@@ -91,17 +91,18 @@ export class InstancedMeshFoundation implements ManagedModel {
             const visible = value.visible !== undefined ? !!value.visible : true;
 
             // 缓存完整变换，避免后续单属性更新时丢失其他属性
-            this.instanceTransforms.set(key, {
+            const trans = {
                 id: key,
                 name: value.name,
                 status: value.status,
                 type: value.type,
                 description: value.description,
-                position: new xyz(),
-                rotation: new xyz(),
-                scale: new xyz(1,1,1),
+                position: new xyz(position.x, position.y, position.z),
+                rotation: new xyz(rotation.x, rotation.y, rotation.z),
+                scale: new xyz(scale.x, scale.y, scale.z),
                 visible,
-            });
+            };
+            this.instanceTransforms.set(key, trans);
 
             // 不可见实例通过 zero-scale 隐藏
             dummy.position.copy(position);
@@ -316,13 +317,13 @@ export class InstancedMeshFoundation implements ManagedModel {
     }
 
     /**
-     * 基于当前缓存刷新所有实例的矩阵
+     * 每帧更新（空操作）。
+     *
+     * InstancedMeshFoundation 不需要每帧重算矩阵。
+     * 矩阵只在数据变化时通过 updateAll() 或单实例 setter 更新。
+     * 此方法仅用于满足 ManagedModel 接口的 update? 可选方法。
      */
-    update(): this {
-        this.dataMap.forEach((_value, key) => {
-            this.composeMatrix(key);
-        });
-        this.instancedMesh.instanceMatrix.needsUpdate = true;
+    update(_delta?: number): this {
         return this;
     }
 

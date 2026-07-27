@@ -78,4 +78,16 @@ export interface ManagedModel {
      * @returns { key, data } 或 null
      */
     resolveHit?(intersect: THREE.Intersection<THREE.Object3D>): { key: string; data: any } | null;
+
+    /**
+     * 【可选】设置动画剪辑。
+     * @param clips GLB 中加载的 AnimationClip 数组，用于播放模型动画
+     */
+    setAnimationClips?(clips: Array<THREE.AnimationClip>): void;
+
+    /**
+     * 【可选】每帧更新动画。
+     * @param delta 距上一帧的时间差（秒），由 SceneModelManager2 计算提供
+     */
+    update?(delta: number): void;
 }
