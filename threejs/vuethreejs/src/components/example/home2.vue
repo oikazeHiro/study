@@ -29,6 +29,7 @@ import {ModelInstanceData} from "@/models/base/ManagedModel";
 import {THREE} from '@/utils/threeModules'
 import {raycastModels} from '@/models/base2/RaycastHelper'
 import {OutlineEffectManager} from '@/models/base2/OutlineEffectManager'
+import CarInstancedMesh from "@/models/loaderModel/CarInstancedMesh";
 
 const canvasContainer = ref<HTMLElement | null>(null)
 const loaded = ref(false)
@@ -71,7 +72,7 @@ const addCarGrid = (modelKey: string, offsetZ: number) => {
         rotation: { x: 0, y: 0, z: 0 },
         scale: { x: 1, y: 1, z: 1 },
         status: 'normal',
-        colorCode: i%5
+        // colorCode: i%5
       }
     }
   }
@@ -98,9 +99,8 @@ const testDataAddData = () => {
     }
   }
   // 输出 container 占多少内存
-
-  testData.container = Object.fromEntries(container)
-  // addCarGrid('gt_001_vehicle', 0)
+  // testData.container = Object.fromEntries(container)
+  addCarGrid('cartest', 0)
 }
 
 const testConfig: OrbitControlOptions = {
@@ -165,6 +165,39 @@ manager.registerModel('container', async (key, primitive, data) => {
     getStaticUrl('~/assets/container/红色.png'),
     getStaticUrl('~/assets/container/黄色.png'),
     getStaticUrl('~/assets/container/蓝色.png'),
+  ], data, key, 2)
+  return model;
+})
+
+manager.registerModel('cartest', async (key, primitive, data) => {
+
+  const model = new CarInstancedMesh()
+  // primitive 是 gltf.scene（THREE.Scene/Group），需遍历找到实际 Mesh
+  const meshes: THREE.Mesh[] = []
+  primitive.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh) meshes.push(child as THREE.Mesh)
+  })
+  const mesh = meshes[0]
+  if (!mesh) {
+    console.error('cartest.glb 中未找到 Mesh 节点')
+    return model
+  }
+
+  const geometry = mesh.geometry.clone()
+  {
+    const uvAttr = geometry.getAttribute('uv')
+    const uvArr = uvAttr.array as Float32Array
+    for (let i = 1; i < uvArr.length; i += 2) {
+      uvArr[i] = 1.0 - uvArr[i]
+    }
+    uvAttr.needsUpdate = true
+  }
+
+  await model.initFromUrls(geometry, [
+    getStaticUrl('~/assets/car/白色.png'),
+    getStaticUrl('~/assets/car/红色.png'),
+    getStaticUrl('~/assets/car/黑色.png'),
+    getStaticUrl('~/assets/car/蓝色.png'),
   ], data, key, 2)
   return model;
 })

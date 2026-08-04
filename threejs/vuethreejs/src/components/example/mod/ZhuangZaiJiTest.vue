@@ -109,13 +109,15 @@ const initAnimations = (gltf: any) => {
 }
 
 const loader = new GLTFLoader();
-const url = getStaticUrl('~/blender/ship/zhuangZaiJi.glb');
+// const url = getStaticUrl('~/blender/ship/zhuangZaiJi.glb');
+const url = '/models/car/地图.glb';
 loader.load(url, (gltf) => {
   console.log(gltf)
   gltf.scene.position.y = 1
   zzj = gltf.scene;
+  zzj.scale.copy(new THREE.Vector3(3,3,3))
   scene.add(zzj);
-  initAnimations(gltf);
+  // initAnimations(gltf);
 });
 
 const createPanel = () => {
@@ -203,7 +205,7 @@ const initThree = () => {
 
   // 设置相机
   camera.aspect = width / height
-  camera.position.set(5, 5, 5)
+  camera.position.set(0, 50, 0)
   camera.lookAt(0, 0, 0)
   camera.updateProjectionMatrix()
 

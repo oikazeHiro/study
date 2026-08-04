@@ -24,15 +24,6 @@ export default class TestModelLoader extends ModelStandardLoader {
             },
             {
                 isNeedLoaded: true,
-                lowModelPath: '/models/car/86年雪佛兰M1009汽车.glb',
-                mediumModelPath: '/models/car/86年雪佛兰M1009汽车.glb',
-                highModelPath: '/models/car/86年雪佛兰M1009汽车.glb',
-                path: '/models/car/86年雪佛兰M1009汽车.glb',
-                key: 'chevrolet_m1009',
-                name: '86年雪佛兰M1009'
-            },
-            {
-                isNeedLoaded: true,
                 lowModelPath: '/models/car/GT_001.004_Vehicle.glb',
                 mediumModelPath: '/models/car/GT_001.004_Vehicle.glb',
                 highModelPath: '/models/car/GT_001.004_Vehicle.glb',
@@ -57,6 +48,15 @@ export default class TestModelLoader extends ModelStandardLoader {
                 path: '/models/ship/container.glb',
                 key: 'container',
                 name: 'container'
+            },
+            {
+                isNeedLoaded: true,
+                lowModelPath: '/models/car/轿车1不带默认贴图.glb',
+                mediumModelPath: '/models/car/轿车1不带默认贴图.glb',
+                highModelPath: '/models/car/轿车1不带默认贴图.glb',
+                path: '/models/car/轿车1不带默认贴图.glb',
+                key: 'cartest',
+                name: 'cartest'
             },
         ];
     }
